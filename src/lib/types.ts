@@ -130,3 +130,64 @@ export interface RegistroAuditoria {
   detalle: string | null
   ip: string | null
 }
+
+// --- Consultorios, médicos y citas (fase 3) ---
+
+export interface Consultorio {
+  id: number
+  nombre: string
+  especialidad: string
+  activo: boolean
+}
+
+export interface Medico {
+  id: number
+  nombreCompleto: string
+  cmp: string | null
+}
+
+export type EstadoCita =
+  | "PROGRAMADA"
+  | "EN_ESPERA_TRIAJE"
+  | "EN_ESPERA_CONSULTA"
+  | "EN_CONSULTA"
+  | "ATENDIDO"
+  | "CANCELADA"
+  | "NO_SE_PRESENTO"
+
+export const NOMBRE_ESTADO_CITA: Record<EstadoCita, string> = {
+  PROGRAMADA: "Programada",
+  EN_ESPERA_TRIAJE: "En espera de triaje",
+  EN_ESPERA_CONSULTA: "En espera de consulta",
+  EN_CONSULTA: "En consulta",
+  ATENDIDO: "Atendido",
+  CANCELADA: "Cancelada",
+  NO_SE_PRESENTO: "No se presentó",
+}
+
+export interface Cita {
+  id: number
+  fecha: string
+  hora: string | null
+  sinCita: boolean
+  estado: EstadoCita
+  numeroTurno: number | null
+  motivo: string | null
+  paciente: {
+    id: number
+    numeroHc: string
+    nombreCompleto: string
+    edad: string
+    sexo: Sexo
+    tipoFinanciamiento: TipoFinanciamiento
+  }
+  medico: Medico
+  consultorio: Consultorio
+  llegadaEn: string | null
+  triajeEn: string | null
+  consultaInicioEn: string | null
+  atendidoEn: string | null
+  canceladaEn: string | null
+  motivoCancelacion: string | null
+  creadoEn: string
+}

@@ -3,6 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, useWatch } from "react-hook-form"
 
 import { useAuth } from "@/auth/AuthContext"
+import { EstadoCitaEtiqueta } from "@/components/EstadoCitaEtiqueta"
 import { Alerta } from "@/components/form"
 import { Button } from "@/components/ui/button"
 import {
@@ -13,10 +14,12 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { ApiError, api, json } from "@/lib/api"
+import { fechaLocal, formatearFecha, formatearHora } from "@/lib/fechas"
 import {
   NOMBRE_ESTADO_SEGURO,
   NOMBRE_FINANCIAMIENTO,
   NOMBRE_TIPO_DOCUMENTO,
+  type Cita,
   type EstadoSeguro,
   type Paciente,
 } from "@/lib/types"
@@ -36,12 +39,6 @@ const formatoFechaHora = new Intl.DateTimeFormat("es-PE", {
   dateStyle: "short",
   timeStyle: "short",
 })
-
-/** "1985-03-14" → fecha local (sin desfase de zona horaria). */
-function fechaLocal(iso: string) {
-  const [a, m, d] = iso.split("-").map(Number)
-  return new Date(a, m - 1, d)
-}
 
 export function FichaPaciente({
   id,
@@ -261,7 +258,49 @@ export function FichaPaciente({
           </Card>
         </div>
       )}
+
+      {modo === "ver" && <CitasDelPaciente pacienteId={paciente.id} />}
     </div>
+  )
+}
+
+/** Historial de citas del paciente (más recientes primero). */
+function CitasDelPaciente({ pacienteId }: { pacienteId: number }) {
+  const { datos: citas } = useApi<Cita[]>(`/api/citas?pacienteId=${pacienteId}`)
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Citas</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {!citas ? (
+          <p className="text-sm text-muted-foreground">Cargando…</p>
+        ) : citas.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            El paciente no tiene citas registradas.
+          </p>
+        ) : (
+          <table className="w-full text-sm">
+            <tbody>
+              {citas.map((c) => (
+                <tr key={c.id} className="border-t first:border-t-0">
+                  <td className="py-2 pr-3 whitespace-nowrap">
+                    {formatearFecha(c.fecha)}{" "}
+                    {c.sinCita ? "(sin cita)" : formatearHora(c.hora)}
+                  </td>
+                  <td className="py-2 pr-3">
+                    {c.consultorio.nombre} · {c.medico.nombreCompleto}
+                  </td>
+                  <td className="py-2">
+                    <EstadoCitaEtiqueta estado={c.estado} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 

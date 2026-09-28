@@ -1,5 +1,6 @@
 import { z } from "zod"
 
+import { hoyISO } from "@/lib/fechas"
 import type { Paciente } from "@/lib/types"
 
 // Mismas reglas que el backend (PacienteRequest / PacienteService): se validan aquí para dar
@@ -7,12 +8,6 @@ import type { Paciente } from "@/lib/types"
 
 const TELEFONO = /^[0-9+ ]{6,15}$/
 const DOCUMENTO = /^[A-Za-z0-9]{1,20}$/
-
-function hoyISO() {
-  const d = new Date()
-  d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
-  return d.toISOString().slice(0, 10)
-}
 
 const opcional = (max: number) =>
   z.string().trim().max(max, `máximo ${max} caracteres`)

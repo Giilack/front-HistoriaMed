@@ -45,3 +45,23 @@ export function useDebounce<T>(valor: T, ms = 300) {
   }, [valor, ms])
   return retrasado
 }
+
+/**
+ * Hora actual que se actualiza cada `ms` y ejecuta `alTick` en cada actualización.
+ * Sirve para refrescar colas y mostrar tiempos de espera que avanzan.
+ */
+export function useReloj(ms: number, alTick?: () => void) {
+  const [ahora, setAhora] = React.useState(() => Date.now())
+  const tick = React.useRef(alTick)
+  React.useEffect(() => {
+    tick.current = alTick
+  })
+  React.useEffect(() => {
+    const id = setInterval(() => {
+      setAhora(Date.now())
+      tick.current?.()
+    }, ms)
+    return () => clearInterval(id)
+  }, [ms])
+  return ahora
+}

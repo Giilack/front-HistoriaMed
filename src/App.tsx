@@ -5,12 +5,24 @@ import { Button } from "@/components/ui/button"
 import { NOMBRE_ROL, type Rol } from "@/lib/types"
 import { AuditoriaPage } from "@/pages/AuditoriaPage"
 import { CambiarPasswordPage } from "@/pages/CambiarPasswordPage"
+import { CitasPage } from "@/pages/citas/CitasPage"
+import { ColaPage } from "@/pages/citas/ColaPage"
+import { ConsultoriosPage } from "@/pages/ConsultoriosPage"
 import { InicioPage } from "@/pages/InicioPage"
 import { LoginPage } from "@/pages/LoginPage"
 import { PacientesPage } from "@/pages/pacientes/PacientesPage"
 import { UsuariosPage } from "@/pages/UsuariosPage"
 
-type Vista = "inicio" | "pacientes" | "usuarios" | "auditoria" | "cuenta"
+type Vista =
+  | "inicio"
+  | "citas"
+  | "colaTriaje"
+  | "misPacientes"
+  | "pacientes"
+  | "usuarios"
+  | "consultorios"
+  | "auditoria"
+  | "cuenta"
 
 // Menú según el rol. Las opciones de los demás roles se agregarán en las siguientes fases.
 const MENU: { vista: Vista; etiqueta: string; roles: Rol[] }[] = [
@@ -19,12 +31,16 @@ const MENU: { vista: Vista; etiqueta: string; roles: Rol[] }[] = [
     etiqueta: "Inicio",
     roles: ["ADMIN", "ADMISION", "TRIAJE", "MEDICO"],
   },
+  { vista: "citas", etiqueta: "Citas", roles: ["ADMISION"] },
+  { vista: "colaTriaje", etiqueta: "Cola de triaje", roles: ["TRIAJE"] },
+  { vista: "misPacientes", etiqueta: "Mis pacientes", roles: ["MEDICO"] },
   {
     vista: "pacientes",
     etiqueta: "Pacientes",
     roles: ["ADMISION", "TRIAJE", "MEDICO"],
   },
   { vista: "usuarios", etiqueta: "Usuarios", roles: ["ADMIN"] },
+  { vista: "consultorios", etiqueta: "Consultorios", roles: ["ADMIN"] },
   { vista: "auditoria", etiqueta: "Auditoría", roles: ["ADMIN"] },
   {
     vista: "cuenta",
@@ -87,7 +103,11 @@ export function App() {
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">
         {vistaActual === "inicio" && <InicioPage />}
+        {vistaActual === "citas" && <CitasPage />}
+        {vistaActual === "colaTriaje" && <ColaPage modo="triaje" />}
+        {vistaActual === "misPacientes" && <ColaPage modo="medico" />}
         {vistaActual === "pacientes" && <PacientesPage />}
+        {vistaActual === "consultorios" && <ConsultoriosPage />}
         {vistaActual === "usuarios" && <UsuariosPage />}
         {vistaActual === "auditoria" && <AuditoriaPage />}
         {vistaActual === "cuenta" && (

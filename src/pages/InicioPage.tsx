@@ -13,19 +13,21 @@ const FUNCIONES: Record<Rol, string[]> = {
   ADMIN: [
     "Gestionar usuarios",
     "Consultar la auditoría",
-    "Catálogos (próximamente)",
+    "Gestionar consultorios",
   ],
   ADMISION: [
     "Registrar pacientes, su financiamiento y verificar su seguro",
-    "Gestionar citas y la cola de atención (fase 3)",
+    "Programar citas y registrar llegadas (con o sin cita)",
     "Subir documentos (fase 6)",
   ],
   TRIAJE: [
+    "Ver la cola de triaje del día",
     "Buscar pacientes y ver su ficha",
     "Registrar signos vitales y prioridad (fase 4)",
     "Ver el resumen clínico del paciente (fase 4)",
   ],
   MEDICO: [
+    "Ver sus pacientes del día",
     "Buscar pacientes y ver su ficha",
     "Atender pacientes de su cola (fase 5)",
     "Diagnosticar (CIE-10) y recetar (fase 5)",
