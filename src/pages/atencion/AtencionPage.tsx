@@ -3,6 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useFieldArray, useForm } from "react-hook-form"
 import { z } from "zod"
 
+import { useConfirmacion } from "@/components/Confirmacion"
 import { Alerta, Campo, Input, Select, Textarea } from "@/components/form"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -248,13 +249,18 @@ function EditorAtencion({
     Record<number, string>
   >({})
 
+  const { confirmar } = useConfirmacion()
+
   async function enviar(d: Datos, cerrar: boolean) {
     setError(null)
     if (
       cerrar &&
-      !window.confirm(
-        "¿Firmar y cerrar la atención? Después no podrá modificarse, solo agregar adendas."
-      )
+      !(await confirmar({
+        titulo: "¿Firmar y cerrar la atención?",
+        descripcion:
+          "Después no podrá modificarse; las correcciones se agregan como adendas.",
+        accion: "Firmar y cerrar",
+      }))
     )
       return
     try {

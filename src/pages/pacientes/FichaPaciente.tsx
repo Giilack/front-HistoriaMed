@@ -3,6 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, useWatch } from "react-hook-form"
 
 import { useAuth } from "@/auth/AuthContext"
+import { useConfirmacion } from "@/components/Confirmacion"
 import { EstadoCitaEtiqueta } from "@/components/EstadoCitaEtiqueta"
 import { Alerta } from "@/components/form"
 import { Button } from "@/components/ui/button"
@@ -56,6 +57,7 @@ export function FichaPaciente({
 }) {
   const { usuario } = useAuth()
   const puedeEditar = usuario?.rol === "ADMISION"
+  const { confirmar } = useConfirmacion()
   // Datos clínicos (alergias, triajes): solo TRIAJE y MEDICO (plan.md, principio P1)
   const veDatosClinicos = usuario?.rol === "TRIAJE" || usuario?.rol === "MEDICO"
   const {
@@ -82,9 +84,12 @@ export function FichaPaciente({
     if (!paciente) return
     const tipo = NOMBRE_FINANCIAMIENTO[paciente.financiamiento.tipo]
     if (
-      !window.confirm(
-        `¿Confirmar que el ${tipo} del paciente está ${NOMBRE_ESTADO_SEGURO[estado].toLowerCase()} en su padrón?`
-      )
+      !(await confirmar({
+        titulo: `¿El ${tipo} del paciente está ${NOMBRE_ESTADO_SEGURO[estado].toLowerCase()}?`,
+        descripcion:
+          "Confirme que lo verificó en el padrón del seguro. Quedará registrada la fecha de verificación.",
+        accion: "Registrar verificación",
+      }))
     )
       return
     try {

@@ -1,6 +1,7 @@
 import * as React from "react"
 
 import { useAuth } from "@/auth/AuthContext"
+import { useConfirmacion } from "@/components/Confirmacion"
 import { Alerta, Campo, Input, Select } from "@/components/form"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -60,17 +61,29 @@ export function UsuariosPage() {
     recargar: cargar,
   } = useApi<Pagina<Usuario>>(`/api/usuarios?${params}`)
   const error = errorAccion ?? errorCarga
+  const { confirmar } = useConfirmacion()
 
   async function accion(
     u: Usuario,
     tipo: "activar" | "desactivar" | "resetear"
   ) {
     const confirmaciones = {
-      desactivar: `¿Desactivar a ${u.username}? No podrá ingresar al sistema.`,
-      activar: `¿Reactivar a ${u.username}?`,
-      resetear: `¿Generar una nueva contraseña temporal para ${u.username}? Se cerrarán sus sesiones.`,
+      desactivar: {
+        titulo: `¿Desactivar a ${u.username}?`,
+        descripcion:
+          "No podrá ingresar al sistema. Sus registros se conservan.",
+        accion: "Desactivar",
+        destructivo: true,
+      },
+      activar: { titulo: `¿Reactivar a ${u.username}?`, accion: "Reactivar" },
+      resetear: {
+        titulo: `¿Generar una contraseña temporal para ${u.username}?`,
+        descripcion:
+          "Se cerrarán sus sesiones abiertas y deberá cambiarla al ingresar.",
+        accion: "Generar contraseña",
+      },
     }
-    if (!window.confirm(confirmaciones[tipo])) return
+    if (!(await confirmar(confirmaciones[tipo]))) return
     setError(null)
     try {
       if (tipo === "resetear") {

@@ -92,8 +92,9 @@
     --chart-4: #7dd3fc;
     --chart-5: #94a3b8;
     --radius: 0.625rem;
+    /* Menú lateral blanco: texto gris pizarra; opción activa en celeste claro con azul petróleo oscuro */
     --sidebar: #ffffff;
-    --sidebar-foreground: #0f172a;
+    --sidebar-foreground: #475569;
     --sidebar-primary: #0369a1;
     --sidebar-primary-foreground: #ffffff;
     --sidebar-accent: #e0f2fe;

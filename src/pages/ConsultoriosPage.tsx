@@ -1,5 +1,6 @@
 import * as React from "react"
 
+import { useConfirmacion } from "@/components/Confirmacion"
 import { Alerta, Campo, Input } from "@/components/form"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,14 +19,19 @@ export function ConsultoriosPage() {
     null
   )
   const [error, setError] = React.useState<string | null>(null)
+  const { confirmar } = useConfirmacion()
 
   async function cambiarEstado(c: Consultorio) {
     const accion = c.activo ? "desactivar" : "activar"
     if (
       c.activo &&
-      !window.confirm(
-        `¿Desactivar ${c.nombre}? No se podrán programar citas en él.`
-      )
+      !(await confirmar({
+        titulo: `¿Desactivar ${c.nombre}?`,
+        descripcion:
+          "No se podrán programar citas en él. Las citas pasadas se conservan.",
+        accion: "Desactivar",
+        destructivo: true,
+      }))
     )
       return
     setError(null)

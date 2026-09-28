@@ -1,5 +1,6 @@
 import * as React from "react"
 
+import { useConfirmacion } from "@/components/Confirmacion"
 import { EstadoCitaEtiqueta } from "@/components/EstadoCitaEtiqueta"
 import { Alerta, Input, Select } from "@/components/form"
 import { Button } from "@/components/ui/button"
@@ -15,6 +16,7 @@ import { FormularioCita, type ModoCita } from "./FormularioCita"
  * Reglas en plan.md, sección 4.
  */
 export function CitasPage() {
+  const { confirmar, pedirTexto } = useConfirmacion()
   const [fecha, setFecha] = React.useState(hoyISO())
   const [consultorioId, setConsultorioId] = React.useState("")
   const [medicoId, setMedicoId] = React.useState("")
@@ -41,11 +43,11 @@ export function CitasPage() {
   async function accion(
     c: Cita,
     ruta: string,
-    confirmacion: string,
+    confirmacion: Parameters<typeof confirmar>[0] | null,
     cuerpo?: object,
     exito?: string
   ) {
-    if (confirmacion && !window.confirm(confirmacion)) return
+    if (confirmacion && !(await confirmar(confirmacion))) return
     setErrorAccion(null)
     setMensaje(null)
     try {
@@ -62,12 +64,16 @@ export function CitasPage() {
     }
   }
 
-  function cancelar(c: Cita) {
-    const motivo = window.prompt(
-      `Motivo de la cancelación de la cita de ${c.paciente.nombreCompleto}:`
-    )
+  async function cancelar(c: Cita) {
+    const motivo = await pedirTexto({
+      titulo: `¿Cancelar la cita de ${c.paciente.nombreCompleto}?`,
+      etiqueta: "Motivo de la cancelación",
+      placeholder: "ej. el paciente reprogramará",
+      accion: "Cancelar cita",
+      destructivo: true,
+    })
     if (motivo === null) return
-    void accion(c, "cancelar", "", { motivo })
+    void accion(c, "cancelar", null, { motivo })
   }
 
   const error = errorAccion ?? errorCarga
@@ -216,7 +222,7 @@ export function CitasPage() {
                           accion(
                             c,
                             "llegada",
-                            "",
+                            null,
                             undefined,
                             `Llegada de ${c.paciente.nombreCompleto} registrada.`
                           )
@@ -251,11 +257,13 @@ export function CitasPage() {
                         size="xs"
                         variant="destructive"
                         onClick={() =>
-                          accion(
-                            c,
-                            "no-se-presento",
-                            `¿Marcar que ${c.paciente.nombreCompleto} no se presentó?`
-                          )
+                          accion(c, "no-se-presento", {
+                            titulo: `¿${c.paciente.nombreCompleto} no se presentó?`,
+                            descripcion:
+                              "La cita quedará como «no se presentó».",
+                            accion: "Sí, marcar",
+                            destructivo: true,
+                          })
                         }
                       >
                         No se presentó

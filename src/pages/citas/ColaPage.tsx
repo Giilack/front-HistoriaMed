@@ -1,5 +1,6 @@
 import * as React from "react"
 
+import { useConfirmacion } from "@/components/Confirmacion"
 import { EstadoCitaEtiqueta } from "@/components/EstadoCitaEtiqueta"
 import { Alerta, Select } from "@/components/form"
 import { PrioridadEtiqueta } from "@/components/PrioridadEtiqueta"
@@ -79,11 +80,17 @@ export function ColaPage({ modo }: { modo: "triaje" | "medico" }) {
     )
   }, [citas, modo])
 
+  const { confirmar } = useConfirmacion()
+
   async function noRespondio(c: Cita) {
     if (
-      !window.confirm(
-        `¿${c.paciente.nombreCompleto} no respondió al llamado? Saldrá de la cola.`
-      )
+      !(await confirmar({
+        titulo: `¿${c.paciente.nombreCompleto} no respondió al llamado?`,
+        descripcion:
+          "Saldrá de la cola y la cita quedará como «no se presentó».",
+        accion: "Sí, no respondió",
+        destructivo: true,
+      }))
     )
       return
     setError(null)

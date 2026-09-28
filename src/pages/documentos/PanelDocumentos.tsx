@@ -1,6 +1,7 @@
 import * as React from "react"
 
 import { useAuth } from "@/auth/AuthContext"
+import { useConfirmacion } from "@/components/Confirmacion"
 import { Alerta, Campo, Input, Select } from "@/components/form"
 import { Button } from "@/components/ui/button"
 import { ApiError, abrirArchivo, api, json } from "@/lib/api"
@@ -48,6 +49,8 @@ export function PanelDocumentos({
   const vigentes = documentos?.filter((d) => d.estado === "RECIBIDO") ?? []
   const anulados = documentos?.filter((d) => d.estado === "ANULADO") ?? []
 
+  const { pedirTexto } = useConfirmacion()
+
   async function ver(d: DocumentoClinico) {
     setError(null)
     try {
@@ -58,10 +61,16 @@ export function PanelDocumentos({
   }
 
   async function anular(d: DocumentoClinico) {
-    const motivo = window.prompt(
-      `¿Por qué se anula «${d.nombreOriginal}»? (por ejemplo, "corresponde a otro paciente"). El registro se conserva.`
-    )
-    if (!motivo?.trim()) return
+    const motivo = await pedirTexto({
+      titulo: `¿Anular «${d.nombreOriginal}»?`,
+      descripcion:
+        "El registro se conserva, pero su contenido deja de mostrarse.",
+      etiqueta: "Motivo de la anulación",
+      placeholder: "ej. corresponde a otro paciente",
+      accion: "Anular documento",
+      destructivo: true,
+    })
+    if (!motivo) return
     setError(null)
     try {
       await api(`/api/documentos/${d.id}/anular`, {

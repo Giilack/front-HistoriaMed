@@ -1,5 +1,6 @@
 import * as React from "react"
 
+import { useConfirmacion } from "@/components/Confirmacion"
 import { Alerta, Campo, Input, Select } from "@/components/form"
 import { Button } from "@/components/ui/button"
 import { ApiError, api, json } from "@/lib/api"
@@ -35,11 +36,19 @@ export function PanelAlergias({ pacienteId }: { pacienteId: number }) {
   const activas = alergias?.filter((a) => a.activa) ?? []
   const inactivas = alergias?.filter((a) => !a.activa) ?? []
 
+  const { pedirTexto } = useConfirmacion()
+
   async function inactivar(a: Alergia) {
-    const motivo = window.prompt(
-      `¿Por qué se inactiva la alergia a ${a.sustancia}? (por ejemplo, "registrada por error")`
-    )
-    if (!motivo?.trim()) return
+    const motivo = await pedirTexto({
+      titulo: `¿Inactivar la alergia a ${a.sustancia}?`,
+      descripcion:
+        "No se borra: queda en el historial como inactiva, con el motivo.",
+      etiqueta: "Motivo",
+      placeholder: "ej. registrada por error",
+      accion: "Inactivar",
+      destructivo: true,
+    })
+    if (!motivo) return
     setError(null)
     try {
       await api(`/api/alergias/${a.id}/inactivar`, {

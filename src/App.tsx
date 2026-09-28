@@ -1,9 +1,23 @@
 import * as React from "react"
 
 import { useAuth } from "@/auth/AuthContext"
-import { Marca } from "@/components/Marca"
-import { Button } from "@/components/ui/button"
-import { NOMBRE_ROL, type Rol } from "@/lib/types"
+import { AppSidebar } from "@/components/layout/AppSidebar"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
+import { Separator } from "@/components/ui/separator"
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
+import { Skeleton } from "@/components/ui/skeleton"
+import { formatearFecha, hoyISO } from "@/lib/fechas"
+import { MENU, TITULO_VISTA, type Vista } from "@/lib/navegacion"
 import { AuditoriaPage } from "@/pages/AuditoriaPage"
 import { CambiarPasswordPage } from "@/pages/CambiarPasswordPage"
 import { CitasPage } from "@/pages/citas/CitasPage"
@@ -15,111 +29,72 @@ import { PacientesPage } from "@/pages/pacientes/PacientesPage"
 import { ReportesPage } from "@/pages/ReportesPage"
 import { UsuariosPage } from "@/pages/UsuariosPage"
 
-type Vista =
-  | "inicio"
-  | "citas"
-  | "colaTriaje"
-  | "misPacientes"
-  | "pacientes"
-  | "usuarios"
-  | "consultorios"
-  | "auditoria"
-  | "reportes"
-  | "cuenta"
-
-// Menú según el rol. Las opciones de los demás roles se agregarán en las siguientes fases.
-const MENU: { vista: Vista; etiqueta: string; roles: Rol[] }[] = [
-  {
-    vista: "inicio",
-    etiqueta: "Inicio",
-    roles: ["ADMIN", "ADMISION", "TRIAJE", "MEDICO"],
-  },
-  { vista: "citas", etiqueta: "Citas", roles: ["ADMISION"] },
-  { vista: "colaTriaje", etiqueta: "Cola de triaje", roles: ["TRIAJE"] },
-  { vista: "misPacientes", etiqueta: "Mis pacientes", roles: ["MEDICO"] },
-  {
-    vista: "pacientes",
-    etiqueta: "Pacientes",
-    roles: ["ADMISION", "TRIAJE", "MEDICO"],
-  },
-  { vista: "usuarios", etiqueta: "Usuarios", roles: ["ADMIN"] },
-  { vista: "consultorios", etiqueta: "Consultorios", roles: ["ADMIN"] },
-  { vista: "reportes", etiqueta: "Reportes", roles: ["ADMIN"] },
-  { vista: "auditoria", etiqueta: "Auditoría", roles: ["ADMIN"] },
-  {
-    vista: "cuenta",
-    etiqueta: "Mi contraseña",
-    roles: ["ADMIN", "ADMISION", "TRIAJE", "MEDICO"],
-  },
-]
-
 export function App() {
-  const { usuario, cargando, logout } = useAuth()
+  const { usuario, cargando } = useAuth()
   const [vista, setVista] = React.useState<Vista>("inicio")
 
   if (cargando) {
     return (
-      <div className="flex min-h-svh items-center justify-center text-muted-foreground">
-        Cargando…
+      <div className="flex min-h-svh items-center justify-center bg-background">
+        <div className="flex w-64 flex-col gap-3">
+          <Skeleton className="h-8 w-40" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-3/4" />
+        </div>
       </div>
     )
   }
   if (!usuario) return <LoginPage />
   if (usuario.debeCambiarPassword) return <CambiarPasswordPage obligatorio />
 
-  const opciones = MENU.filter((m) => m.roles.includes(usuario.rol))
   // Si cambia el usuario (otro rol), no mostrar una vista que no le corresponde
-  const vistaActual = opciones.some((m) => m.vista === vista) ? vista : "inicio"
+  const permitida =
+    vista === "cuenta" ||
+    MENU.some((m) => m.vista === vista && m.roles.includes(usuario.rol))
+  const vistaActual: Vista = permitida ? vista : "inicio"
 
   return (
-    <div className="min-h-svh">
-      <header className="sticky top-0 z-20 border-b bg-card/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-          <Marca />
-          <nav className="flex flex-wrap gap-1">
-            {opciones.map((m) => (
-              <Button
-                key={m.vista}
-                size="sm"
-                variant={vistaActual === m.vista ? "secondary" : "ghost"}
-                onClick={() => setVista(m.vista)}
-              >
-                {m.etiqueta}
-              </Button>
-            ))}
-          </nav>
-          <div className="ml-auto flex items-center gap-3 text-sm">
-            <span className="text-muted-foreground">
-              {usuario.nombres} {usuario.apellidos} · {NOMBRE_ROL[usuario.rol]}
-            </span>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setVista("inicio")
-                void logout()
-              }}
-            >
-              Salir
-            </Button>
+    <SidebarProvider>
+      <AppSidebar vista={vistaActual} alNavegar={setVista} />
+      <SidebarInset>
+        <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b bg-card/95 px-4 backdrop-blur">
+          <SidebarTrigger className="-ml-1 text-muted-foreground" />
+          <Separator orientation="vertical" className="mr-1 h-5!" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem className="hidden sm:block">
+                HistoriaMed
+              </BreadcrumbItem>
+              <BreadcrumbSeparator className="hidden sm:block" />
+              <BreadcrumbItem>
+                <BreadcrumbPage className="font-medium">
+                  {TITULO_VISTA[vistaActual]}
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+          <span className="ml-auto hidden text-sm text-muted-foreground capitalize md:block">
+            {formatearFecha(hoyISO())}
+          </span>
+        </header>
+        <main className="flex-1 p-4 md:p-6">
+          <div className="mx-auto w-full max-w-7xl">
+            {vistaActual === "inicio" && <InicioPage alNavegar={setVista} />}
+            {vistaActual === "citas" && <CitasPage />}
+            {vistaActual === "colaTriaje" && <ColaPage modo="triaje" />}
+            {vistaActual === "misPacientes" && <ColaPage modo="medico" />}
+            {vistaActual === "pacientes" && <PacientesPage />}
+            {vistaActual === "consultorios" && <ConsultoriosPage />}
+            {vistaActual === "usuarios" && <UsuariosPage />}
+            {vistaActual === "reportes" && <ReportesPage />}
+            {vistaActual === "auditoria" && <AuditoriaPage />}
+            {vistaActual === "cuenta" && (
+              <CambiarPasswordPage obligatorio={false} />
+            )}
           </div>
-        </div>
-      </header>
-      <main className="mx-auto max-w-6xl px-4 py-6">
-        {vistaActual === "inicio" && <InicioPage />}
-        {vistaActual === "citas" && <CitasPage />}
-        {vistaActual === "colaTriaje" && <ColaPage modo="triaje" />}
-        {vistaActual === "misPacientes" && <ColaPage modo="medico" />}
-        {vistaActual === "pacientes" && <PacientesPage />}
-        {vistaActual === "consultorios" && <ConsultoriosPage />}
-        {vistaActual === "usuarios" && <UsuariosPage />}
-        {vistaActual === "reportes" && <ReportesPage />}
-        {vistaActual === "auditoria" && <AuditoriaPage />}
-        {vistaActual === "cuenta" && (
-          <CambiarPasswordPage obligatorio={false} />
-        )}
-      </main>
-    </div>
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }
 

@@ -40,7 +40,8 @@ export function Marca({
         <HeartPulse className={t.icono} strokeWidth={2.25} />
       </span>
       <span
-        className={`font-semibold tracking-tight ${t.texto} ${
+        // Se oculta cuando el menú lateral está contraído a solo iconos
+        className={`font-semibold tracking-tight group-data-[collapsible=icon]:hidden ${t.texto} ${
           clara ? "text-white" : "text-marca-oscuro dark:text-foreground"
         }`}
       >
