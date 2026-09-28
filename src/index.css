@@ -128,3 +128,20 @@
     @apply font-sans;
     }
 }
+/* Impresión de la receta: solo se imprime el bloque .zona-impresion (ver AtencionDetalle) */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .zona-impresion,
+  .zona-impresion * {
+    visibility: visible;
+  }
+  .zona-impresion {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    color: black;
+  }
+}

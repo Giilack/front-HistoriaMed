@@ -30,9 +30,9 @@ const FUNCIONES: Record<Rol, string[]> = {
     "Ver sus pacientes del día, ordenados por prioridad",
     "Ver el triaje y las alergias de cada paciente",
     "Buscar pacientes y ver su ficha",
-    "Atender pacientes de su cola (fase 5)",
-    "Diagnosticar (CIE-10) y recetar (fase 5)",
-    "Ver la historia clínica completa (fase 5)",
+    "Atender: anamnesis, examen físico, diagnóstico CIE-10 y receta",
+    "Alerta automática si receta algo a lo que el paciente es alérgico",
+    "Firmar la atención y agregar adendas; ver la historia clínica completa",
   ],
 }
 

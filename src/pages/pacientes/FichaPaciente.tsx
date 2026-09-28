@@ -25,6 +25,7 @@ import {
   type Triaje,
 } from "@/lib/types"
 import { useApi } from "@/lib/useApi"
+import { HistoriaClinica } from "@/pages/atencion/HistoriaClinica"
 import { PanelAlergias } from "@/pages/triaje/PanelAlergias"
 import { TriajeResumen } from "@/pages/triaje/TriajeResumen"
 
@@ -276,6 +277,10 @@ export function FichaPaciente({
           </Card>
           <HistorialTriajes pacienteId={paciente.id} />
         </div>
+      )}
+
+      {modo === "ver" && usuario?.rol === "MEDICO" && (
+        <HistoriaClinica pacienteId={paciente.id} />
       )}
 
       {modo === "ver" && <CitasDelPaciente pacienteId={paciente.id} />}

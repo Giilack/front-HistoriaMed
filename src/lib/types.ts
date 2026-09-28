@@ -277,3 +277,90 @@ export interface Alergia {
   registradoPor: string
   creadoEn: string
 }
+
+// --- Atención médica (fase 5) ---
+
+export type TipoDiagnostico = "PRESUNTIVO" | "DEFINITIVO"
+
+export type ViaAdministracion =
+  | "ORAL"
+  | "SUBLINGUAL"
+  | "TOPICA"
+  | "OFTALMICA"
+  | "OTICA"
+  | "NASAL"
+  | "INHALATORIA"
+  | "VAGINAL"
+  | "RECTAL"
+  | "INTRAMUSCULAR"
+  | "ENDOVENOSA"
+  | "SUBCUTANEA"
+
+export const NOMBRE_VIA: Record<ViaAdministracion, string> = {
+  ORAL: "Oral",
+  SUBLINGUAL: "Sublingual",
+  TOPICA: "Tópica",
+  OFTALMICA: "Oftálmica",
+  OTICA: "Ótica",
+  NASAL: "Nasal",
+  INHALATORIA: "Inhalatoria",
+  VAGINAL: "Vaginal",
+  RECTAL: "Rectal",
+  INTRAMUSCULAR: "Intramuscular",
+  ENDOVENOSA: "Endovenosa",
+  SUBCUTANEA: "Subcutánea",
+}
+
+export interface Cie10 {
+  codigo: string
+  descripcion: string
+}
+
+export interface MedicamentoCatalogo {
+  id: number
+  nombre: string
+  concentracion: string
+  formaFarmaceutica: string
+  descripcion: string
+}
+
+export interface Atencion {
+  id: number
+  citaId: number
+  paciente: {
+    id: number
+    numeroHc: string
+    nombreCompleto: string
+    edad: string
+    sexo: Sexo
+  }
+  medico: { id: number; nombreCompleto: string; cmp: string | null }
+  estado: "EN_CURSO" | "CERRADA"
+  inicioEn: string
+  cerradaEn: string | null
+  motivoConsulta: string
+  tiempoEnfermedad: string | null
+  anamnesis: string | null
+  examenFisico: string | null
+  planTrabajo: string | null
+  indicaciones: string | null
+  diagnosticos: {
+    codigo: string
+    descripcion: string
+    tipo: TipoDiagnostico
+    principal: boolean
+  }[]
+  receta: {
+    medicamentoId: number
+    medicamento: string
+    dosis: string
+    via: ViaAdministracion
+    frecuencia: string
+    duracion: string
+    cantidad: number
+    indicaciones: string | null
+    alergiaConfirmada: boolean
+    justificacionAlergia: string | null
+  }[]
+  adendas: { id: number; autor: string; texto: string; creadoEn: string }[]
+}

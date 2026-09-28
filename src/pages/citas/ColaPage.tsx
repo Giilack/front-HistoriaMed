@@ -18,9 +18,11 @@ import {
   type Cita,
   type Consultorio,
   type EstadoCita,
+  type Atencion,
   type Triaje,
 } from "@/lib/types"
 import { useApi, useReloj } from "@/lib/useApi"
+import { AtencionPage } from "@/pages/atencion/AtencionPage"
 import { FormularioTriaje } from "@/pages/triaje/FormularioTriaje"
 import { TriajeResumen } from "@/pages/triaje/TriajeResumen"
 
@@ -49,6 +51,7 @@ export function ColaPage({ modo }: { modo: "triaje" | "medico" }) {
   const [error, setError] = React.useState<string | null>(null)
   const [mensaje, setMensaje] = React.useState<string | null>(null)
   const [triando, setTriando] = React.useState<Cita | null>(null)
+  const [atencion, setAtencion] = React.useState<Atencion | null>(null)
   const [expandida, setExpandida] = React.useState<number | null>(null)
   const { datos: consultorios } = useApi<Consultorio[]>("/api/consultorios")
 
@@ -92,6 +95,35 @@ export function ColaPage({ modo }: { modo: "triaje" | "medico" }) {
         e instanceof Error ? e.message : "No se pudo completar la acción"
       )
     }
+  }
+
+  /** Atender (abre o retoma la atención) o ver una atención ya terminada. */
+  async function abrirAtencion(c: Cita) {
+    setError(null)
+    setMensaje(null)
+    try {
+      const terminada = c.estado === "ATENDIDO"
+      setAtencion(
+        await api<Atencion>(`/api/citas/${c.id}/atencion`, {
+          method: terminada ? "GET" : "POST",
+        })
+      )
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo abrir la atención")
+    }
+  }
+
+  if (atencion) {
+    return (
+      <AtencionPage
+        key={atencion.id}
+        atencion={atencion}
+        alVolver={() => {
+          setAtencion(null)
+          recargar()
+        }}
+      />
+    )
   }
 
   if (triando) {
@@ -248,6 +280,26 @@ export function ColaPage({ modo }: { modo: "triaje" | "medico" }) {
                               No respondió
                             </Button>
                           </>
+                        )}
+                        {modo === "medico" &&
+                          c.estado === "EN_ESPERA_CONSULTA" && (
+                            <Button size="xs" onClick={() => abrirAtencion(c)}>
+                              Atender
+                            </Button>
+                          )}
+                        {modo === "medico" && c.estado === "EN_CONSULTA" && (
+                          <Button size="xs" onClick={() => abrirAtencion(c)}>
+                            Continuar
+                          </Button>
+                        )}
+                        {modo === "medico" && c.estado === "ATENDIDO" && (
+                          <Button
+                            size="xs"
+                            variant="outline"
+                            onClick={() => abrirAtencion(c)}
+                          >
+                            Ver atención
+                          </Button>
                         )}
                         {modo === "medico" && c.triajeEn && (
                           <Button

@@ -15,6 +15,16 @@ export function Select(props: React.ComponentProps<"select">) {
   )
 }
 
+export function Textarea(props: React.ComponentProps<"textarea">) {
+  return (
+    <textarea
+      rows={3}
+      {...props}
+      className={`${claseControl} h-auto py-2 ${props.className ?? ""}`}
+    />
+  )
+}
+
 /** Etiqueta + control + mensaje de error del campo. */
 export function Campo({
   label,
