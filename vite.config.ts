@@ -11,4 +11,12 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    port: 5173,
+    // Las llamadas a /api se reenvían al backend: el navegador ve un solo origen,
+    // así la cookie de sesión (SameSite=Strict) funciona sin configurar CORS.
+    proxy: {
+      "/api": "http://localhost:8080",
+    },
+  },
 })
