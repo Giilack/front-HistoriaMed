@@ -1,6 +1,7 @@
 import * as React from "react"
 
 import { useAuth } from "@/auth/AuthContext"
+import { Marca } from "@/components/Marca"
 import { Button } from "@/components/ui/button"
 import { NOMBRE_ROL, type Rol } from "@/lib/types"
 import { AuditoriaPage } from "@/pages/AuditoriaPage"
@@ -72,9 +73,9 @@ export function App() {
 
   return (
     <div className="min-h-svh">
-      <header className="border-b">
+      <header className="sticky top-0 z-20 border-b bg-card/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-          <span className="font-semibold">HistoriaMed</span>
+          <Marca />
           <nav className="flex flex-wrap gap-1">
             {opciones.map((m) => (
               <Button

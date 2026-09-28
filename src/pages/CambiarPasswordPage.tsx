@@ -1,6 +1,7 @@
 import * as React from "react"
 
 import { useAuth } from "@/auth/AuthContext"
+import { AuthLayout } from "@/components/AuthLayout"
 import { Alerta, Campo, Input } from "@/components/form"
 import { Button } from "@/components/ui/button"
 import {
@@ -118,9 +119,6 @@ export function CambiarPasswordPage({
   )
 
   if (!obligatorio) return formulario
-  return (
-    <div className="flex min-h-svh items-center justify-center bg-muted/40 p-4">
-      {formulario}
-    </div>
-  )
+  // Contraseña temporal: mismo diseño que el login, porque es parte del acceso
+  return <AuthLayout>{formulario}</AuthLayout>
 }

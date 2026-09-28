@@ -6,6 +6,10 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+    --color-marca: var(--marca);
+    --color-marca-oscuro: var(--marca-oscuro);
+    --color-marca-acento: var(--marca-acento);
+    --color-marca-claro: var(--marca-claro);
     --font-heading: var(--font-sans);
     --font-sans: 'Inter Variable', sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
@@ -48,78 +52,98 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/*
+ * Paleta de HistoriaMed
+ *   Azul petróleo (principal) #0369A1 · Azul petróleo oscuro #0C4A6E · Celeste (acento) #38BDF8
+ *   Celeste claro #E0F2FE · Fondo #F8FAFC · Superficie #FFFFFF
+ * Los neutros (texto, bordes, atenuados) son grises pizarra, de la misma familia fría que el fondo.
+ */
 :root {
-    /* Gráficos (reportes): tono secuencial azul de la paleta de referencia */
-    --viz-serie: #2a78d6;
-    --viz-grilla: #e1e0d9;
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
+    --marca: #0369a1;
+    --marca-oscuro: #0c4a6e;
+    --marca-acento: #38bdf8;
+    --marca-claro: #e0f2fe;
+
+    /* Gráficos (reportes): una sola serie en el azul principal */
+    --viz-serie: #0369a1;
+    --viz-grilla: #e2e8f0;
+
+    --background: #f8fafc;
+    --foreground: #0f172a;
+    --card: #ffffff;
+    --card-foreground: #0f172a;
+    --popover: #ffffff;
+    --popover-foreground: #0f172a;
+    --primary: #0369a1;
+    --primary-foreground: #ffffff;
+    --secondary: #e0f2fe;
+    --secondary-foreground: #0c4a6e;
+    --muted: #f1f5f9;
+    --muted-foreground: #64748b;
+    --accent: #e0f2fe;
+    --accent-foreground: #0c4a6e;
     --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
+    --border: #e2e8f0;
+    --input: #cbd5e1;
+    --ring: #38bdf8;
+    --chart-1: #0369a1;
+    --chart-2: #38bdf8;
+    --chart-3: #0c4a6e;
+    --chart-4: #7dd3fc;
+    --chart-5: #94a3b8;
     --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+    --sidebar: #ffffff;
+    --sidebar-foreground: #0f172a;
+    --sidebar-primary: #0369a1;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #e0f2fe;
+    --sidebar-accent-foreground: #0c4a6e;
+    --sidebar-border: #e2e8f0;
+    --sidebar-ring: #38bdf8;
 }
 
+/* Modo oscuro: los mismos tonos, con el celeste como principal para mantener el contraste */
 .dark {
-    --viz-serie: #3987e5;
-    --viz-grilla: #2c2c2a;
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
+    --marca: #38bdf8;
+    --marca-oscuro: #0c4a6e;
+    --marca-acento: #38bdf8;
+    --marca-claro: #0c4a6e;
+
+    /* #0284c7: tono intermedio validado para barras sobre la superficie oscura (el celeste es muy claro) */
+    --viz-serie: #0284c7;
+    --viz-grilla: #1e3a52;
+
+    --background: #0b1724;
+    --foreground: #f1f5f9;
+    --card: #10233a;
+    --card-foreground: #f1f5f9;
+    --popover: #10233a;
+    --popover-foreground: #f1f5f9;
+    --primary: #38bdf8;
+    --primary-foreground: #0c2a40;
+    --secondary: #0c4a6e;
+    --secondary-foreground: #e0f2fe;
+    --muted: #16304a;
+    --muted-foreground: #94a3b8;
+    --accent: #0c4a6e;
+    --accent-foreground: #e0f2fe;
     --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+    --border: rgb(255 255 255 / 10%);
+    --input: rgb(255 255 255 / 18%);
+    --ring: #38bdf8;
+    --chart-1: #38bdf8;
+    --chart-2: #7dd3fc;
+    --chart-3: #0369a1;
+    --chart-4: #bae6fd;
+    --chart-5: #94a3b8;
+    --sidebar: #10233a;
+    --sidebar-foreground: #f1f5f9;
+    --sidebar-primary: #38bdf8;
+    --sidebar-primary-foreground: #0c2a40;
+    --sidebar-accent: #0c4a6e;
+    --sidebar-accent-foreground: #e0f2fe;
+    --sidebar-border: rgb(255 255 255 / 10%);
+    --sidebar-ring: #38bdf8;
 }
 
 @layer base {

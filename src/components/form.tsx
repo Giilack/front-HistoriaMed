@@ -1,18 +1,16 @@
 import * as React from "react"
 
+import { cn } from "@/lib/utils"
+
 const claseControl =
   "h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive disabled:opacity-50"
 
 export function Input(props: React.ComponentProps<"input">) {
-  return (
-    <input {...props} className={`${claseControl} ${props.className ?? ""}`} />
-  )
+  return <input {...props} className={cn(claseControl, props.className)} />
 }
 
 export function Select(props: React.ComponentProps<"select">) {
-  return (
-    <select {...props} className={`${claseControl} ${props.className ?? ""}`} />
-  )
+  return <select {...props} className={cn(claseControl, props.className)} />
 }
 
 export function Textarea(props: React.ComponentProps<"textarea">) {
@@ -20,7 +18,7 @@ export function Textarea(props: React.ComponentProps<"textarea">) {
     <textarea
       rows={3}
       {...props}
-      className={`${claseControl} h-auto py-2 ${props.className ?? ""}`}
+      className={cn(claseControl, "h-auto py-2", props.className)}
     />
   )
 }
