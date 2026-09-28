@@ -22,8 +22,11 @@ import {
   type Cita,
   type EstadoSeguro,
   type Paciente,
+  type Triaje,
 } from "@/lib/types"
 import { useApi } from "@/lib/useApi"
+import { PanelAlergias } from "@/pages/triaje/PanelAlergias"
+import { TriajeResumen } from "@/pages/triaje/TriajeResumen"
 
 import { CamposFinanciamiento } from "./CamposFinanciamiento"
 import {
@@ -51,6 +54,8 @@ export function FichaPaciente({
 }) {
   const { usuario } = useAuth()
   const puedeEditar = usuario?.rol === "ADMISION"
+  // Datos clínicos (alergias, triajes): solo TRIAJE y MEDICO (plan.md, principio P1)
+  const veDatosClinicos = usuario?.rol === "TRIAJE" || usuario?.rol === "MEDICO"
   const {
     datos: paciente,
     error: errorCarga,
@@ -259,8 +264,61 @@ export function FichaPaciente({
         </div>
       )}
 
+      {modo === "ver" && veDatosClinicos && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Alergias</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PanelAlergias pacienteId={paciente.id} />
+            </CardContent>
+          </Card>
+          <HistorialTriajes pacienteId={paciente.id} />
+        </div>
+      )}
+
       {modo === "ver" && <CitasDelPaciente pacienteId={paciente.id} />}
     </div>
+  )
+}
+
+/** Últimos triajes del paciente: el más reciente abierto, los anteriores plegados. */
+function HistorialTriajes({ pacienteId }: { pacienteId: number }) {
+  const { datos: triajes } = useApi<Triaje[]>(
+    `/api/pacientes/${pacienteId}/triajes`
+  )
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Triajes</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        {!triajes ? (
+          <p className="text-sm text-muted-foreground">Cargando…</p>
+        ) : triajes.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            El paciente no tiene triajes registrados.
+          </p>
+        ) : (
+          triajes.map((t, i) => (
+            <details
+              key={t.id}
+              open={i === 0}
+              className="rounded-md border p-2"
+            >
+              <summary className="cursor-pointer text-sm font-medium">
+                {formatoFechaHora.format(new Date(t.fechaHora))} ·{" "}
+                {t.motivoConsulta}
+              </summary>
+              <div className="pt-2">
+                <TriajeResumen triaje={t} />
+              </div>
+            </details>
+          ))
+        )}
+      </CardContent>
+    </Card>
   )
 }
 

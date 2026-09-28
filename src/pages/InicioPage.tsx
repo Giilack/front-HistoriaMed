@@ -23,11 +23,12 @@ const FUNCIONES: Record<Rol, string[]> = {
   TRIAJE: [
     "Ver la cola de triaje del día",
     "Buscar pacientes y ver su ficha",
-    "Registrar signos vitales y prioridad (fase 4)",
-    "Ver el resumen clínico del paciente (fase 4)",
+    "Registrar signos vitales, con alertas y prioridad sugerida",
+    "Registrar y consultar alergias del paciente",
   ],
   MEDICO: [
-    "Ver sus pacientes del día",
+    "Ver sus pacientes del día, ordenados por prioridad",
+    "Ver el triaje y las alergias de cada paciente",
     "Buscar pacientes y ver su ficha",
     "Atender pacientes de su cola (fase 5)",
     "Diagnosticar (CIE-10) y recetar (fase 5)",

@@ -172,6 +172,7 @@ export interface Cita {
   sinCita: boolean
   estado: EstadoCita
   numeroTurno: number | null
+  prioridad: Prioridad | null
   motivo: string | null
   paciente: {
     id: number
@@ -189,5 +190,90 @@ export interface Cita {
   atendidoEn: string | null
   canceladaEn: string | null
   motivoCancelacion: string | null
+  creadoEn: string
+}
+
+// --- Triaje y alergias (fase 4) ---
+
+export type Prioridad = "NORMAL" | "PREFERENTE" | "URGENTE"
+
+export const NOMBRE_PRIORIDAD: Record<Prioridad, string> = {
+  NORMAL: "Normal",
+  PREFERENTE: "Preferente",
+  URGENTE: "Urgente",
+}
+
+/** Orden para comparar prioridades (mayor = más prioritario). */
+export const NIVEL_PRIORIDAD: Record<Prioridad, number> = {
+  NORMAL: 0,
+  PREFERENTE: 1,
+  URGENTE: 2,
+}
+
+export type Severidad = "ADVERTENCIA" | "CRITICA"
+
+export interface Alerta {
+  codigo: string
+  severidad: Severidad
+  mensaje: string
+}
+
+export interface Evaluacion {
+  alertas: Alerta[]
+  imc: number | null
+  prioridadSugerida: Prioridad
+}
+
+export interface Triaje {
+  id: number
+  citaId: number
+  pacienteId: number
+  fechaHora: string
+  registradoPor: string
+  motivoConsulta: string
+  presionSistolica: number | null
+  presionDiastolica: number | null
+  frecuenciaCardiaca: number
+  frecuenciaRespiratoria: number | null
+  temperatura: number
+  saturacion: number
+  peso: number
+  talla: number | null
+  imc: number | null
+  perimetroAbdominal: number | null
+  gestante: boolean
+  discapacidad: boolean
+  prioridadSugerida: Prioridad
+  prioridad: Prioridad
+  justificacionPrioridad: string | null
+  observaciones: string | null
+  alertas: Alerta[]
+}
+
+export type TipoAlergia = "MEDICAMENTO" | "ALIMENTO" | "AMBIENTAL" | "OTRO"
+export type GravedadAlergia = "LEVE" | "MODERADA" | "SEVERA"
+
+export const NOMBRE_TIPO_ALERGIA: Record<TipoAlergia, string> = {
+  MEDICAMENTO: "Medicamento",
+  ALIMENTO: "Alimento",
+  AMBIENTAL: "Ambiental",
+  OTRO: "Otro",
+}
+
+export const NOMBRE_GRAVEDAD: Record<GravedadAlergia, string> = {
+  LEVE: "Leve",
+  MODERADA: "Moderada",
+  SEVERA: "Severa",
+}
+
+export interface Alergia {
+  id: number
+  tipo: TipoAlergia
+  sustancia: string
+  reaccion: string | null
+  gravedad: GravedadAlergia
+  activa: boolean
+  motivoInactivacion: string | null
+  registradoPor: string
   creadoEn: string
 }

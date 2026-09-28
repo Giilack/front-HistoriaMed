@@ -2,6 +2,7 @@ import * as React from "react"
 
 import { EstadoCitaEtiqueta } from "@/components/EstadoCitaEtiqueta"
 import { Alerta, Select } from "@/components/form"
+import { PrioridadEtiqueta } from "@/components/PrioridadEtiqueta"
 import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
 import {
@@ -11,18 +12,44 @@ import {
   hoyISO,
   minutosDesde,
 } from "@/lib/fechas"
-import type { Cita, Consultorio, EstadoCita } from "@/lib/types"
+import {
+  NIVEL_PRIORIDAD,
+  NOMBRE_PRIORIDAD,
+  type Cita,
+  type Consultorio,
+  type EstadoCita,
+  type Triaje,
+} from "@/lib/types"
 import { useApi, useReloj } from "@/lib/useApi"
+import { FormularioTriaje } from "@/pages/triaje/FormularioTriaje"
+import { TriajeResumen } from "@/pages/triaje/TriajeResumen"
+
+/** Ambas vistas tienen 6 columnas. */
+const COLUMNAS = 6
+
+/** Orden de la lista del médico: primero quien está en consulta, luego quienes esperan, luego el resto. */
+const ORDEN_ESTADO: Record<EstadoCita, number> = {
+  EN_CONSULTA: 0,
+  EN_ESPERA_CONSULTA: 1,
+  EN_ESPERA_TRIAJE: 2,
+  PROGRAMADA: 3,
+  ATENDIDO: 4,
+  NO_SE_PRESENTO: 5,
+  CANCELADA: 6,
+}
 
 /**
  * Cola del día.
- * - triaje: pacientes que llegaron y esperan triaje, por orden de llegada.
- * - medico: sus pacientes de hoy (el backend solo le devuelve los suyos).
- * El registro del triaje (fase 4) y de la consulta (fase 5) se agregarán aquí.
+ * - triaje: pacientes que llegaron y esperan triaje, por orden de llegada; desde aquí se registra el triaje.
+ * - medico: sus pacientes de hoy (el backend solo le devuelve los suyos); los que esperan consulta se ordenan
+ *   por prioridad y luego por hora de llegada (plan.md, sección 5.3). La consulta se agregará en la fase 5.
  */
 export function ColaPage({ modo }: { modo: "triaje" | "medico" }) {
   const [consultorioId, setConsultorioId] = React.useState("")
   const [error, setError] = React.useState<string | null>(null)
+  const [mensaje, setMensaje] = React.useState<string | null>(null)
+  const [triando, setTriando] = React.useState<Cita | null>(null)
+  const [expandida, setExpandida] = React.useState<number | null>(null)
   const { datos: consultorios } = useApi<Consultorio[]>("/api/consultorios")
 
   const params = new URLSearchParams({ fecha: hoyISO() })
@@ -35,23 +62,18 @@ export function ColaPage({ modo }: { modo: "triaje" | "medico" }) {
   } = useApi<Cita[]>(`/api/citas?${params}`)
   const ahora = useReloj(30_000, recargar)
 
-  // Triaje: por orden de llegada. Médico: primero quienes esperan consulta, luego el resto del día.
   const ordenadas = React.useMemo(() => {
+    const porLlegada = (a: Cita, b: Cita) =>
+      (a.llegadaEn ?? "").localeCompare(b.llegadaEn ?? "")
     const lista = [...(citas ?? [])]
-    if (modo === "triaje")
-      return lista.sort((a, b) =>
-        (a.llegadaEn ?? "").localeCompare(b.llegadaEn ?? "")
-      )
-    const prioridad: Record<EstadoCita, number> = {
-      EN_CONSULTA: 0,
-      EN_ESPERA_CONSULTA: 1,
-      EN_ESPERA_TRIAJE: 2,
-      PROGRAMADA: 3,
-      ATENDIDO: 4,
-      NO_SE_PRESENTO: 5,
-      CANCELADA: 6,
-    }
-    return lista.sort((a, b) => prioridad[a.estado] - prioridad[b.estado])
+    if (modo === "triaje") return lista.sort(porLlegada)
+    return lista.sort(
+      (a, b) =>
+        ORDEN_ESTADO[a.estado] - ORDEN_ESTADO[b.estado] ||
+        (b.prioridad ? NIVEL_PRIORIDAD[b.prioridad] : -1) -
+          (a.prioridad ? NIVEL_PRIORIDAD[a.prioridad] : -1) ||
+        porLlegada(a, b)
+    )
   }, [citas, modo])
 
   async function noRespondio(c: Cita) {
@@ -70,6 +92,24 @@ export function ColaPage({ modo }: { modo: "triaje" | "medico" }) {
         e instanceof Error ? e.message : "No se pudo completar la acción"
       )
     }
+  }
+
+  if (triando) {
+    return (
+      <FormularioTriaje
+        cita={triando}
+        alCancelar={() => setTriando(null)}
+        alGuardar={(t) => {
+          setTriando(null)
+          setError(null)
+          setMensaje(
+            `Triaje de ${triando.paciente.nombreCompleto} registrado con prioridad ${NOMBRE_PRIORIDAD[t.prioridad].toLowerCase()}. ` +
+              `Pasó a la cola de ${triando.medico.nombreCompleto}.`
+          )
+          recargar()
+        }}
+      />
+    )
   }
 
   const titulo = modo === "triaje" ? "Cola de triaje" : "Mis pacientes de hoy"
@@ -107,12 +147,8 @@ export function ColaPage({ modo }: { modo: "triaje" | "medico" }) {
         </div>
       </div>
 
+      {mensaje && <Alerta tipo="exito">{mensaje}</Alerta>}
       {(error ?? errorCarga) && <Alerta>{error ?? errorCarga}</Alerta>}
-      {modo === "triaje" && (
-        <Alerta tipo="info">
-          El registro de signos vitales y prioridad se habilitará en la fase 4.
-        </Alerta>
-      )}
 
       <div className="overflow-x-auto rounded-md border">
         <table className="w-full text-sm">
@@ -121,18 +157,18 @@ export function ColaPage({ modo }: { modo: "triaje" | "medico" }) {
               <th className="px-3 py-2 font-medium">Turno</th>
               <th className="px-3 py-2 font-medium">Paciente</th>
               <th className="px-3 py-2 font-medium">Consultorio</th>
-              {modo === "triaje" && (
-                <th className="px-3 py-2 font-medium">Médico</th>
+              {modo === "triaje" ? (
+                <>
+                  <th className="px-3 py-2 font-medium">Médico</th>
+                  <th className="px-3 py-2 font-medium">Espera</th>
+                </>
+              ) : (
+                <>
+                  <th className="px-3 py-2 font-medium">Prioridad</th>
+                  <th className="px-3 py-2 font-medium">Estado</th>
+                </>
               )}
-              <th className="px-3 py-2 font-medium">
-                {modo === "triaje" ? "Espera" : "Hora"}
-              </th>
-              {modo === "medico" && (
-                <th className="px-3 py-2 font-medium">Estado</th>
-              )}
-              {modo === "triaje" && (
-                <th className="px-3 py-2 font-medium">Acciones</th>
-              )}
+              <th className="px-3 py-2 font-medium">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -141,67 +177,108 @@ export function ColaPage({ modo }: { modo: "triaje" | "medico" }) {
                 ? minutosDesde(c.llegadaEn, ahora)
                 : null
               return (
-                <tr key={c.id} className="border-t">
-                  <td className="px-3 py-2 text-lg font-semibold">
-                    {c.numeroTurno ?? "—"}
-                  </td>
-                  <td className="px-3 py-2">
-                    <div className="font-medium">
-                      {c.paciente.nombreCompleto}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {c.paciente.numeroHc} · {c.paciente.edad} ·{" "}
-                      {c.paciente.sexo === "FEMENINO" ? "F" : "M"}
-                      {c.motivo && ` · ${c.motivo}`}
-                    </div>
-                  </td>
-                  <td className="px-3 py-2">{c.consultorio.nombre}</td>
-                  {modo === "triaje" && (
-                    <td className="px-3 py-2">{c.medico.nombreCompleto}</td>
-                  )}
-                  <td className="px-3 py-2 whitespace-nowrap">
+                <React.Fragment key={c.id}>
+                  <tr className="border-t">
+                    <td className="px-3 py-2 text-lg font-semibold">
+                      {c.numeroTurno ?? "—"}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="font-medium">
+                        {c.paciente.nombreCompleto}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {c.paciente.numeroHc} · {c.paciente.edad} ·{" "}
+                        {c.paciente.sexo === "FEMENINO" ? "F" : "M"}
+                        {c.motivo && ` · ${c.motivo}`}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2">{c.consultorio.nombre}</td>
                     {modo === "triaje" ? (
-                      <span
-                        className={
-                          espera !== null && espera >= 30
-                            ? "font-medium text-destructive"
-                            : ""
-                        }
-                      >
-                        {espera} min{" "}
-                        <span className="text-xs text-muted-foreground">
-                          (llegó {horaDe(c.llegadaEn)})
-                        </span>
-                      </span>
-                    ) : c.sinCita ? (
-                      <span className="text-muted-foreground">Sin cita</span>
+                      <>
+                        <td className="px-3 py-2">{c.medico.nombreCompleto}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          <span
+                            className={
+                              espera !== null && espera >= 30
+                                ? "font-medium text-destructive"
+                                : ""
+                            }
+                          >
+                            {espera} min{" "}
+                            <span className="text-xs text-muted-foreground">
+                              (llegó {horaDe(c.llegadaEn)})
+                            </span>
+                          </span>
+                        </td>
+                      </>
                     ) : (
-                      formatearHora(c.hora)
+                      <>
+                        <td className="px-3 py-2">
+                          {c.prioridad ? (
+                            <PrioridadEtiqueta prioridad={c.prioridad} />
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td className="px-3 py-2">
+                          <EstadoCitaEtiqueta estado={c.estado} />
+                          <div className="text-xs text-muted-foreground">
+                            {c.sinCita
+                              ? "Sin cita"
+                              : `Cita ${formatearHora(c.hora)}`}
+                            {c.estado === "EN_ESPERA_CONSULTA" &&
+                              c.triajeEn &&
+                              ` · espera ${minutosDesde(c.triajeEn, ahora)} min`}
+                          </div>
+                        </td>
+                      </>
                     )}
-                  </td>
-                  {modo === "medico" && (
                     <td className="px-3 py-2">
-                      <EstadoCitaEtiqueta estado={c.estado} />
+                      <div className="flex flex-wrap gap-1">
+                        {modo === "triaje" && (
+                          <>
+                            <Button size="xs" onClick={() => setTriando(c)}>
+                              Registrar triaje
+                            </Button>
+                            <Button
+                              size="xs"
+                              variant="destructive"
+                              onClick={() => noRespondio(c)}
+                            >
+                              No respondió
+                            </Button>
+                          </>
+                        )}
+                        {modo === "medico" && c.triajeEn && (
+                          <Button
+                            size="xs"
+                            variant="outline"
+                            onClick={() =>
+                              setExpandida(expandida === c.id ? null : c.id)
+                            }
+                          >
+                            {expandida === c.id
+                              ? "Ocultar triaje"
+                              : "Ver triaje"}
+                          </Button>
+                        )}
+                      </div>
                     </td>
+                  </tr>
+                  {expandida === c.id && (
+                    <tr className="bg-muted/30">
+                      <td colSpan={COLUMNAS} className="px-3 py-3">
+                        <TriajeDeCita citaId={c.id} />
+                      </td>
+                    </tr>
                   )}
-                  {modo === "triaje" && (
-                    <td className="px-3 py-2">
-                      <Button
-                        size="xs"
-                        variant="destructive"
-                        onClick={() => noRespondio(c)}
-                      >
-                        No respondió
-                      </Button>
-                    </td>
-                  )}
-                </tr>
+                </React.Fragment>
               )
             })}
             {citas?.length === 0 && (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={COLUMNAS}
                   className="px-3 py-6 text-center text-muted-foreground"
                 >
                   {modo === "triaje"
@@ -215,4 +292,11 @@ export function ColaPage({ modo }: { modo: "triaje" | "medico" }) {
       </div>
     </div>
   )
+}
+
+function TriajeDeCita({ citaId }: { citaId: number }) {
+  const { datos, error } = useApi<Triaje>(`/api/citas/${citaId}/triaje`)
+  if (error) return <Alerta>{error}</Alerta>
+  if (!datos) return <p className="text-muted-foreground">Cargando…</p>
+  return <TriajeResumen triaje={datos} />
 }
