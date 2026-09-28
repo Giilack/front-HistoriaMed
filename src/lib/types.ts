@@ -364,3 +364,44 @@ export interface Atencion {
   }[]
   adendas: { id: number; autor: string; texto: string; creadoEn: string }[]
 }
+
+// --- Documentos clínicos (fase 6) ---
+
+export type TipoDocumentoClinico =
+  | "LABORATORIO"
+  | "RECETA"
+  | "INFORME_MEDICO"
+  | "EPICRISIS"
+  | "IMAGENOLOGIA"
+  | "REFERENCIA"
+  | "OTRO"
+
+export const NOMBRE_TIPO_DOCUMENTO_CLINICO: Record<
+  TipoDocumentoClinico,
+  string
+> = {
+  LABORATORIO: "Laboratorio",
+  RECETA: "Receta",
+  INFORME_MEDICO: "Informe médico",
+  EPICRISIS: "Epicrisis",
+  IMAGENOLOGIA: "Imagenología",
+  REFERENCIA: "Referencia",
+  OTRO: "Otro",
+}
+
+export interface DocumentoClinico {
+  id: number
+  pacienteId: number
+  citaId: number | null
+  tipo: TipoDocumentoClinico
+  descripcion: string | null
+  fechaDocumento: string | null
+  nombreOriginal: string
+  contentType: string
+  tamanioBytes: number
+  estado: "RECIBIDO" | "ANULADO"
+  motivoAnulacion: string | null
+  subidoPorId: number
+  subidoPor: string
+  creadoEn: string
+}

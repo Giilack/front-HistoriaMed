@@ -16,6 +16,7 @@ import {
   type ViaAdministracion,
 } from "@/lib/types"
 import { useApi } from "@/lib/useApi"
+import { PanelDocumentos } from "@/pages/documentos/PanelDocumentos"
 import { PanelAlergias } from "@/pages/triaje/PanelAlergias"
 import { TriajeResumen } from "@/pages/triaje/TriajeResumen"
 
@@ -186,6 +187,14 @@ export function AtencionPage({
             </CardHeader>
             <CardContent>
               <PanelAlergias pacienteId={p.id} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Documentos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PanelDocumentos pacienteId={p.id} citaId={atencion.citaId} />
             </CardContent>
           </Card>
           <HistoriaClinica pacienteId={p.id} excluirId={atencion.id} />

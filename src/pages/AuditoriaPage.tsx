@@ -18,6 +18,8 @@ const ACCIONES = [
   "ACTIVAR",
   "DESACTIVAR",
   "RESETEAR_PASSWORD",
+  "CERRAR",
+  "DESCARGAR",
 ]
 
 // Acciones que merecen atención del administrador

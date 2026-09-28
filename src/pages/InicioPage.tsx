@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/card"
 import { NOMBRE_ROL, type Rol } from "@/lib/types"
 
-// Funciones de cada rol según plan.md (sección 3); se irán habilitando por fases.
+// Funciones de cada rol según plan.md (sección 3).
 const FUNCIONES: Record<Rol, string[]> = {
   ADMIN: [
     "Gestionar usuarios",
@@ -18,13 +18,14 @@ const FUNCIONES: Record<Rol, string[]> = {
   ADMISION: [
     "Registrar pacientes, su financiamiento y verificar su seguro",
     "Programar citas y registrar llegadas (con o sin cita)",
-    "Subir documentos (fase 6)",
+    "Subir documentos clínicos del paciente",
   ],
   TRIAJE: [
     "Ver la cola de triaje del día",
     "Buscar pacientes y ver su ficha",
     "Registrar signos vitales, con alertas y prioridad sugerida",
     "Registrar y consultar alergias del paciente",
+    "Subir y ver documentos clínicos (análisis, informes)",
   ],
   MEDICO: [
     "Ver sus pacientes del día, ordenados por prioridad",
@@ -55,7 +56,7 @@ export function InicioPage() {
         <CardHeader>
           <CardTitle>Sus funciones en el sistema</CardTitle>
           <CardDescription>
-            Algunas se habilitarán en las siguientes fases.
+            Según su rol en el establecimiento.
           </CardDescription>
         </CardHeader>
         <CardContent>

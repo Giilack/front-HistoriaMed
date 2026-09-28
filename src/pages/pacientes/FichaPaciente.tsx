@@ -26,6 +26,7 @@ import {
 } from "@/lib/types"
 import { useApi } from "@/lib/useApi"
 import { HistoriaClinica } from "@/pages/atencion/HistoriaClinica"
+import { PanelDocumentos } from "@/pages/documentos/PanelDocumentos"
 import { PanelAlergias } from "@/pages/triaje/PanelAlergias"
 import { TriajeResumen } from "@/pages/triaje/TriajeResumen"
 
@@ -263,6 +264,17 @@ export function FichaPaciente({
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {modo === "ver" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Documentos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PanelDocumentos pacienteId={paciente.id} />
+          </CardContent>
+        </Card>
       )}
 
       {modo === "ver" && veDatosClinicos && (
