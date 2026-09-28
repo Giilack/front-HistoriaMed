@@ -45,6 +45,78 @@ export interface Pagina<T> {
   totalPaginas: number
 }
 
+// --- Pacientes (fase 2) ---
+
+export type TipoDocumento =
+  "DNI" | "CARNET_EXTRANJERIA" | "PASAPORTE" | "SIN_DOCUMENTO"
+export type Sexo = "MASCULINO" | "FEMENINO"
+export type TipoFinanciamiento = "SIS" | "ESSALUD" | "PRIVADO" | "PARTICULAR"
+export type EstadoSeguro = "NO_VERIFICADO" | "ACTIVO" | "INACTIVO"
+
+export const NOMBRE_TIPO_DOCUMENTO: Record<TipoDocumento, string> = {
+  DNI: "DNI",
+  CARNET_EXTRANJERIA: "Carné de extranjería",
+  PASAPORTE: "Pasaporte",
+  SIN_DOCUMENTO: "Sin documento",
+}
+
+export const NOMBRE_FINANCIAMIENTO: Record<TipoFinanciamiento, string> = {
+  SIS: "SIS",
+  ESSALUD: "EsSalud",
+  PRIVADO: "Seguro privado / EPS",
+  PARTICULAR: "Particular (sin seguro)",
+}
+
+export const NOMBRE_ESTADO_SEGURO: Record<EstadoSeguro, string> = {
+  NO_VERIFICADO: "No verificado",
+  ACTIVO: "Activo",
+  INACTIVO: "Inactivo",
+}
+
+export interface Financiamiento {
+  tipo: TipoFinanciamiento
+  numeroAfiliacion: string | null
+  plan: string | null
+  estado: EstadoSeguro | null
+  verificadoEn: string | null
+  orientadoAfiliacionSis: boolean
+}
+
+export interface Paciente {
+  id: number
+  numeroHc: string
+  tipoDocumento: TipoDocumento
+  numeroDocumento: string | null
+  nombres: string
+  apellidoPaterno: string
+  apellidoMaterno: string | null
+  nombreCompleto: string
+  fechaNacimiento: string
+  edad: string
+  sexo: Sexo
+  telefono: string | null
+  email: string | null
+  direccion: string | null
+  contactoEmergenciaNombre: string | null
+  contactoEmergenciaTelefono: string | null
+  contactoEmergenciaParentesco: string | null
+  financiamiento: Financiamiento
+  creadoEn: string
+  actualizadoEn: string
+}
+
+export interface PacienteResumen {
+  id: number
+  numeroHc: string
+  tipoDocumento: TipoDocumento
+  numeroDocumento: string | null
+  nombreCompleto: string
+  edad: string
+  sexo: Sexo
+  tipoFinanciamiento: TipoFinanciamiento
+  estadoSeguro: EstadoSeguro | null
+}
+
 export interface RegistroAuditoria {
   id: number
   fecha: string

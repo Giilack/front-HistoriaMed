@@ -7,9 +7,10 @@ import { AuditoriaPage } from "@/pages/AuditoriaPage"
 import { CambiarPasswordPage } from "@/pages/CambiarPasswordPage"
 import { InicioPage } from "@/pages/InicioPage"
 import { LoginPage } from "@/pages/LoginPage"
+import { PacientesPage } from "@/pages/pacientes/PacientesPage"
 import { UsuariosPage } from "@/pages/UsuariosPage"
 
-type Vista = "inicio" | "usuarios" | "auditoria" | "cuenta"
+type Vista = "inicio" | "pacientes" | "usuarios" | "auditoria" | "cuenta"
 
 // Menú según el rol. Las opciones de los demás roles se agregarán en las siguientes fases.
 const MENU: { vista: Vista; etiqueta: string; roles: Rol[] }[] = [
@@ -17,6 +18,11 @@ const MENU: { vista: Vista; etiqueta: string; roles: Rol[] }[] = [
     vista: "inicio",
     etiqueta: "Inicio",
     roles: ["ADMIN", "ADMISION", "TRIAJE", "MEDICO"],
+  },
+  {
+    vista: "pacientes",
+    etiqueta: "Pacientes",
+    roles: ["ADMISION", "TRIAJE", "MEDICO"],
   },
   { vista: "usuarios", etiqueta: "Usuarios", roles: ["ADMIN"] },
   { vista: "auditoria", etiqueta: "Auditoría", roles: ["ADMIN"] },
@@ -81,6 +87,7 @@ export function App() {
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">
         {vistaActual === "inicio" && <InicioPage />}
+        {vistaActual === "pacientes" && <PacientesPage />}
         {vistaActual === "usuarios" && <UsuariosPage />}
         {vistaActual === "auditoria" && <AuditoriaPage />}
         {vistaActual === "cuenta" && (

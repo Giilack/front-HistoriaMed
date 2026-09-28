@@ -32,5 +32,16 @@ export function useApi<T>(url: string) {
 
   const recargar = React.useCallback(() => setVersion((v) => v + 1), [])
 
-  return { datos, error, recargar }
+  // setDatos permite reemplazar los datos con la respuesta de una edición, sin volver a pedirlos
+  return { datos, error, recargar, setDatos }
+}
+
+/** Devuelve el valor después de que deja de cambiar durante `ms` (evita una búsqueda por cada tecla). */
+export function useDebounce<T>(valor: T, ms = 300) {
+  const [retrasado, setRetrasado] = React.useState(valor)
+  React.useEffect(() => {
+    const t = setTimeout(() => setRetrasado(valor), ms)
+    return () => clearTimeout(t)
+  }, [valor, ms])
+  return retrasado
 }
