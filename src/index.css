@@ -49,6 +49,9 @@
 }
 
 :root {
+    /* Gráficos (reportes): tono secuencial azul de la paleta de referencia */
+    --viz-serie: #2a78d6;
+    --viz-grilla: #e1e0d9;
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
@@ -84,6 +87,8 @@
 }
 
 .dark {
+    --viz-serie: #3987e5;
+    --viz-grilla: #2c2c2a;
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);

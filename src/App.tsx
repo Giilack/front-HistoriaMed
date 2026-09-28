@@ -11,6 +11,7 @@ import { ConsultoriosPage } from "@/pages/ConsultoriosPage"
 import { InicioPage } from "@/pages/InicioPage"
 import { LoginPage } from "@/pages/LoginPage"
 import { PacientesPage } from "@/pages/pacientes/PacientesPage"
+import { ReportesPage } from "@/pages/ReportesPage"
 import { UsuariosPage } from "@/pages/UsuariosPage"
 
 type Vista =
@@ -22,6 +23,7 @@ type Vista =
   | "usuarios"
   | "consultorios"
   | "auditoria"
+  | "reportes"
   | "cuenta"
 
 // Menú según el rol. Las opciones de los demás roles se agregarán en las siguientes fases.
@@ -41,6 +43,7 @@ const MENU: { vista: Vista; etiqueta: string; roles: Rol[] }[] = [
   },
   { vista: "usuarios", etiqueta: "Usuarios", roles: ["ADMIN"] },
   { vista: "consultorios", etiqueta: "Consultorios", roles: ["ADMIN"] },
+  { vista: "reportes", etiqueta: "Reportes", roles: ["ADMIN"] },
   { vista: "auditoria", etiqueta: "Auditoría", roles: ["ADMIN"] },
   {
     vista: "cuenta",
@@ -109,6 +112,7 @@ export function App() {
         {vistaActual === "pacientes" && <PacientesPage />}
         {vistaActual === "consultorios" && <ConsultoriosPage />}
         {vistaActual === "usuarios" && <UsuariosPage />}
+        {vistaActual === "reportes" && <ReportesPage />}
         {vistaActual === "auditoria" && <AuditoriaPage />}
         {vistaActual === "cuenta" && (
           <CambiarPasswordPage obligatorio={false} />

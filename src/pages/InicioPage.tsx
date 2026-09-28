@@ -13,6 +13,7 @@ const FUNCIONES: Record<Rol, string[]> = {
   ADMIN: [
     "Gestionar usuarios",
     "Consultar la auditoría",
+    "Ver reportes de gestión (cifras agregadas)",
     "Gestionar consultorios",
   ],
   ADMISION: [
@@ -55,9 +56,7 @@ export function InicioPage() {
       <Card className="max-w-xl">
         <CardHeader>
           <CardTitle>Sus funciones en el sistema</CardTitle>
-          <CardDescription>
-            Según su rol en el establecimiento.
-          </CardDescription>
+          <CardDescription>Según su rol en el establecimiento.</CardDescription>
         </CardHeader>
         <CardContent>
           <ul className="list-disc space-y-1 pl-5 text-sm">

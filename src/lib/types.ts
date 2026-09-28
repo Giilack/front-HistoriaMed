@@ -405,3 +405,36 @@ export interface DocumentoClinico {
   subidoPor: string
   creadoEn: string
 }
+
+// --- Reportes (fase 7) ---
+
+export interface Conteo {
+  codigo: string
+  etiqueta: string
+  total: number
+}
+
+export interface Reporte {
+  desde: string
+  hasta: string
+  totales: {
+    citas: number
+    atendidas: number
+    noSePresento: number
+    canceladas: number
+    tasaInasistencia: number | null
+    pacientesNuevos: number
+  }
+  tiemposEspera: {
+    llegadaATriaje: number | null
+    triajeAConsulta: number | null
+    duracionConsulta: number | null
+  }
+  citasPorEstado: Conteo[]
+  atencionesPorDia: { fecha: string; total: number }[]
+  atencionesPorMedico: Conteo[]
+  atencionesPorConsultorio: Conteo[]
+  diagnosticosFrecuentes: Conteo[]
+  prioridades: Conteo[]
+  pacientesPorFinanciamiento: Conteo[]
+}
