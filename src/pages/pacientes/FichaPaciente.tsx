@@ -1,19 +1,50 @@
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, useWatch } from "react-hook-form"
+import {
+  CalendarDays,
+  CircleCheck,
+  CircleX,
+  ClipboardList,
+  FileText,
+  HeartPulse,
+  IdCard,
+  Pencil,
+  ShieldCheck,
+  Stethoscope,
+  UserRound,
+} from "lucide-react"
+import { toast } from "sonner"
 
 import { useAuth } from "@/auth/AuthContext"
 import { useConfirmacion } from "@/components/Confirmacion"
 import { EstadoCitaEtiqueta } from "@/components/EstadoCitaEtiqueta"
 import { Alerta } from "@/components/form"
+import {
+  AvatarIniciales,
+  EncabezadoPagina,
+  EstadoVacio,
+} from "@/components/pagina"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
   CardAction,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ApiError, api, json } from "@/lib/api"
 import { fechaLocal, formatearFecha, formatearHora } from "@/lib/fechas"
 import {
@@ -26,6 +57,7 @@ import {
   type Triaje,
 } from "@/lib/types"
 import { useApi } from "@/lib/useApi"
+import { cn } from "@/lib/utils"
 import { HistoriaClinica } from "@/pages/atencion/HistoriaClinica"
 import { PanelDocumentos } from "@/pages/documentos/PanelDocumentos"
 import { PanelAlergias } from "@/pages/triaje/PanelAlergias"
@@ -40,7 +72,7 @@ import {
 } from "./esquemas"
 import { FormularioPaciente } from "./FormularioPaciente"
 
-const formatoFecha = new Intl.DateTimeFormat("es-PE", { dateStyle: "medium" })
+const formatoFecha = new Intl.DateTimeFormat("es-PE", { dateStyle: "long" })
 const formatoFechaHora = new Intl.DateTimeFormat("es-PE", {
   dateStyle: "short",
   timeStyle: "short",
@@ -48,11 +80,9 @@ const formatoFechaHora = new Intl.DateTimeFormat("es-PE", {
 
 export function FichaPaciente({
   id,
-  mensajeInicial,
   alVolver,
 }: {
   id: number
-  mensajeInicial?: string
   alVolver: () => void
 }) {
   const { usuario } = useAuth()
@@ -60,6 +90,7 @@ export function FichaPaciente({
   const { confirmar } = useConfirmacion()
   // Datos clínicos (alergias, triajes): solo TRIAJE y MEDICO (plan.md, principio P1)
   const veDatosClinicos = usuario?.rol === "TRIAJE" || usuario?.rol === "MEDICO"
+  const esMedico = usuario?.rol === "MEDICO"
   const {
     datos: paciente,
     error: errorCarga,
@@ -68,16 +99,13 @@ export function FichaPaciente({
   const [modo, setModo] = React.useState<"ver" | "editar" | "financiamiento">(
     "ver"
   )
-  const [mensaje, setMensaje] = React.useState<string | undefined>(
-    mensajeInicial
-  )
   const [error, setError] = React.useState<string | null>(null)
 
   function actualizado(p: Paciente, texto: string) {
     setDatos(p)
     setModo("ver")
-    setMensaje(texto)
     setError(null)
+    toast.success(texto)
   }
 
   async function verificar(estado: EstadoSeguro) {
@@ -101,7 +129,7 @@ export function FichaPaciente({
             ...json({ estado }),
           }
         ),
-        "Verificación del seguro registrada."
+        "Verificación del seguro registrada"
       )
     } catch (e) {
       setError(
@@ -111,197 +139,299 @@ export function FichaPaciente({
   }
 
   if (errorCarga) return <Alerta>{errorCarga}</Alerta>
-  if (!paciente) return <p className="text-muted-foreground">Cargando…</p>
+  if (!paciente) {
+    return (
+      <div className="flex flex-col gap-4">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    )
+  }
 
   const f = paciente.financiamiento
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button variant="ghost" size="sm" onClick={alVolver}>
-          ← Volver a la búsqueda
-        </Button>
-      </div>
+    <div className="flex flex-col gap-6">
+      <EncabezadoPagina
+        titulo="Ficha del paciente"
+        alVolver={alVolver}
+        textoVolver="Volver a pacientes"
+      />
 
-      <div>
-        <p className="font-mono text-sm text-muted-foreground">
-          {paciente.numeroHc}
-        </p>
-        <h1 className="text-2xl font-semibold">{paciente.nombreCompleto}</h1>
-        <p className="text-muted-foreground">
-          {paciente.sexo === "FEMENINO" ? "Femenino" : "Masculino"} ·{" "}
-          {paciente.edad} ·{" "}
-          {paciente.numeroDocumento
-            ? `${NOMBRE_TIPO_DOCUMENTO[paciente.tipoDocumento]} ${paciente.numeroDocumento}`
-            : "Sin documento"}
-        </p>
-      </div>
+      {/* Cabecera con los datos que identifican al paciente */}
+      <Card>
+        <CardContent className="flex flex-wrap items-center gap-4">
+          <AvatarIniciales
+            nombre={paciente.nombreCompleto}
+            className="size-14 text-lg"
+          />
+          <div className="min-w-0 flex-1">
+            <h2 className="truncate text-xl font-semibold tracking-tight">
+              {paciente.nombreCompleto}
+            </h2>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              <Badge variant="outline" className="font-mono">
+                {paciente.numeroHc}
+              </Badge>
+              <span className="inline-flex items-center gap-1">
+                <IdCard className="size-4" aria-hidden />
+                {paciente.numeroDocumento
+                  ? `${NOMBRE_TIPO_DOCUMENTO[paciente.tipoDocumento]} ${paciente.numeroDocumento}`
+                  : "Sin documento"}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <UserRound className="size-4" aria-hidden />
+                {paciente.edad} ·{" "}
+                {paciente.sexo === "FEMENINO" ? "Femenino" : "Masculino"}
+              </span>
+              <Badge variant="secondary">{NOMBRE_FINANCIAMIENTO[f.tipo]}</Badge>
+              {f.estado && <EstadoSeguroEtiqueta estado={f.estado} />}
+            </div>
+          </div>
+          {puedeEditar && modo === "ver" && (
+            <Button variant="outline" onClick={() => setModo("editar")}>
+              <Pencil />
+              Editar datos
+            </Button>
+          )}
+        </CardContent>
+      </Card>
 
-      {mensaje && <Alerta tipo="exito">{mensaje}</Alerta>}
       {error && <Alerta>{error}</Alerta>}
 
       {modo === "editar" && (
         <FormularioPaciente
           paciente={paciente}
-          alGuardar={(p) => actualizado(p, "Datos actualizados.")}
+          alGuardar={(p) => actualizado(p, "Datos del paciente actualizados")}
           alCancelar={() => setModo("ver")}
         />
       )}
       {modo === "financiamiento" && (
         <FormularioFinanciamiento
           paciente={paciente}
-          alGuardar={(p) => actualizado(p, "Financiamiento actualizado.")}
+          alGuardar={(p) => actualizado(p, "Financiamiento actualizado")}
           alCancelar={() => setModo("ver")}
         />
       )}
 
       {modo === "ver" && (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Datos del paciente</CardTitle>
-              {puedeEditar && (
-                <CardAction>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setModo("editar")}
-                  >
-                    Editar
-                  </Button>
-                </CardAction>
-              )}
-            </CardHeader>
-            <CardContent>
-              <Datos
-                filas={[
-                  [
-                    "Fecha de nacimiento",
-                    formatoFecha.format(fechaLocal(paciente.fechaNacimiento)),
-                  ],
-                  ["Teléfono", paciente.telefono],
-                  ["Email", paciente.email],
-                  ["Dirección", paciente.direccion],
-                  [
-                    "Contacto de emergencia",
-                    paciente.contactoEmergenciaNombre &&
+        <Tabs defaultValue="datos">
+          <TabsList
+            variant="line"
+            className="w-full justify-start gap-2 overflow-x-auto border-b pb-0"
+          >
+            <Pestana valor="datos" icono={UserRound} texto="Datos" />
+            {veDatosClinicos && (
+              <Pestana
+                valor="clinico"
+                icono={HeartPulse}
+                texto="Alergias y triajes"
+              />
+            )}
+            {esMedico && (
+              <Pestana
+                valor="historia"
+                icono={Stethoscope}
+                texto="Historia clínica"
+              />
+            )}
+            <Pestana valor="documentos" icono={FileText} texto="Documentos" />
+            <Pestana valor="citas" icono={CalendarDays} texto="Citas" />
+          </TabsList>
+
+          <TabsContent value="datos" className="pt-4">
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Filiación</CardTitle>
+                  <CardDescription>
+                    Datos personales y de contacto
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Datos
+                    filas={[
                       [
-                        paciente.contactoEmergenciaNombre,
-                        paciente.contactoEmergenciaParentesco &&
-                          `(${paciente.contactoEmergenciaParentesco})`,
-                        paciente.contactoEmergenciaTelefono,
-                      ]
-                        .filter(Boolean)
-                        .join(" "),
-                  ],
-                  [
-                    "Registrado",
-                    formatoFechaHora.format(new Date(paciente.creadoEn)),
-                  ],
-                ]}
-              />
-            </CardContent>
-          </Card>
+                        "Fecha de nacimiento",
+                        formatoFecha.format(
+                          fechaLocal(paciente.fechaNacimiento)
+                        ),
+                      ],
+                      ["Teléfono", paciente.telefono],
+                      ["Email", paciente.email],
+                      ["Dirección", paciente.direccion],
+                      [
+                        "Contacto de emergencia",
+                        paciente.contactoEmergenciaNombre &&
+                          [
+                            paciente.contactoEmergenciaNombre,
+                            paciente.contactoEmergenciaParentesco &&
+                              `(${paciente.contactoEmergenciaParentesco})`,
+                            paciente.contactoEmergenciaTelefono,
+                          ]
+                            .filter(Boolean)
+                            .join(" "),
+                      ],
+                      [
+                        "Registrado",
+                        formatoFechaHora.format(new Date(paciente.creadoEn)),
+                      ],
+                    ]}
+                  />
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Financiamiento</CardTitle>
-              {puedeEditar && (
-                <CardAction>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setModo("financiamiento")}
-                  >
-                    Cambiar
-                  </Button>
-                </CardAction>
-              )}
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <Datos
-                filas={[
-                  ["Tipo", NOMBRE_FINANCIAMIENTO[f.tipo]],
-                  ...(f.tipo !== "PARTICULAR"
-                    ? ([
-                        ["N.º de afiliación", f.numeroAfiliacion],
-                        [f.tipo === "PRIVADO" ? "Aseguradora" : "Plan", f.plan],
-                        [
-                          "Estado",
-                          f.estado && (
-                            <EstadoSeguroEtiqueta estado={f.estado} />
-                          ),
-                        ],
-                        [
-                          "Verificado",
-                          f.verificadoEn &&
-                            formatoFechaHora.format(new Date(f.verificadoEn)),
-                        ],
-                      ] as [string, React.ReactNode][])
-                    : ([
-                        [
-                          "Orientado a afiliación SIS",
-                          f.orientadoAfiliacionSis ? "Sí" : "No",
-                        ],
-                      ] as [string, React.ReactNode][])),
-                ]}
-              />
-              {puedeEditar && f.tipo !== "PARTICULAR" && (
-                <div className="flex flex-wrap items-center gap-2 border-t pt-4 text-sm">
-                  <span className="text-muted-foreground">
-                    Resultado de la verificación en el padrón:
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => verificar("ACTIVO")}
-                  >
-                    Activo
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => verificar("INACTIVO")}
-                  >
-                    Inactivo
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Financiamiento</CardTitle>
+                  <CardDescription>
+                    Seguro con el que se atiende
+                  </CardDescription>
+                  {puedeEditar && (
+                    <CardAction>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setModo("financiamiento")}
+                      >
+                        <Pencil />
+                        Cambiar
+                      </Button>
+                    </CardAction>
+                  )}
+                </CardHeader>
+                <CardContent className="flex flex-col gap-4">
+                  <Datos
+                    filas={[
+                      ["Tipo", NOMBRE_FINANCIAMIENTO[f.tipo]],
+                      ...(f.tipo !== "PARTICULAR"
+                        ? ([
+                            ["N.º de afiliación", f.numeroAfiliacion],
+                            [
+                              f.tipo === "PRIVADO" ? "Aseguradora" : "Plan",
+                              f.plan,
+                            ],
+                            [
+                              "Estado",
+                              f.estado && (
+                                <EstadoSeguroEtiqueta estado={f.estado} />
+                              ),
+                            ],
+                            [
+                              "Verificado",
+                              f.verificadoEn &&
+                                formatoFechaHora.format(
+                                  new Date(f.verificadoEn)
+                                ),
+                            ],
+                          ] as [string, React.ReactNode][])
+                        : ([
+                            [
+                              "Orientado a afiliación SIS",
+                              f.orientadoAfiliacionSis ? "Sí" : "No",
+                            ],
+                          ] as [string, React.ReactNode][])),
+                    ]}
+                  />
+                  {puedeEditar && f.tipo !== "PARTICULAR" && (
+                    <div className="flex flex-col gap-2 rounded-lg bg-muted/60 p-3">
+                      <span className="inline-flex items-center gap-1.5 text-sm font-medium">
+                        <ShieldCheck
+                          className="size-4 text-marca"
+                          aria-hidden
+                        />
+                        Resultado de la verificación en el padrón
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => verificar("ACTIVO")}
+                        >
+                          <CircleCheck className="text-green-600" />
+                          Activo
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => verificar("INACTIVO")}
+                        >
+                          <CircleX className="text-destructive" />
+                          Inactivo
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {veDatosClinicos && (
+            <TabsContent value="clinico" className="pt-4">
+              <div className="grid gap-4 lg:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Alergias</CardTitle>
+                    <CardDescription>
+                      Se verifican automáticamente al recetar
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <PanelAlergias pacienteId={paciente.id} />
+                  </CardContent>
+                </Card>
+                <HistorialTriajes pacienteId={paciente.id} />
+              </div>
+            </TabsContent>
+          )}
+
+          {esMedico && (
+            <TabsContent value="historia" className="pt-4">
+              <HistoriaClinica pacienteId={paciente.id} />
+            </TabsContent>
+          )}
+
+          <TabsContent value="documentos" className="pt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Documentos clínicos</CardTitle>
+                <CardDescription>
+                  Análisis, informes, imágenes y referencias (PDF, JPG o PNG)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PanelDocumentos pacienteId={paciente.id} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="citas" className="pt-4">
+            <CitasDelPaciente pacienteId={paciente.id} />
+          </TabsContent>
+        </Tabs>
       )}
-
-      {modo === "ver" && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Documentos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <PanelDocumentos pacienteId={paciente.id} />
-          </CardContent>
-        </Card>
-      )}
-
-      {modo === "ver" && veDatosClinicos && (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Alergias</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <PanelAlergias pacienteId={paciente.id} />
-            </CardContent>
-          </Card>
-          <HistorialTriajes pacienteId={paciente.id} />
-        </div>
-      )}
-
-      {modo === "ver" && usuario?.rol === "MEDICO" && (
-        <HistoriaClinica pacienteId={paciente.id} />
-      )}
-
-      {modo === "ver" && <CitasDelPaciente pacienteId={paciente.id} />}
     </div>
+  )
+}
+
+function Pestana({
+  valor,
+  icono: Icono,
+  texto,
+}: {
+  valor: string
+  icono: React.ComponentType<{ className?: string }>
+  texto: string
+}) {
+  return (
+    <TabsTrigger
+      value={valor}
+      className="flex-none px-3 pb-2.5 after:bg-marca data-active:text-marca dark:data-active:text-marca"
+    >
+      <Icono className="size-4" />
+      {texto}
+    </TabsTrigger>
   )
 }
 
@@ -314,26 +444,31 @@ function HistorialTriajes({ pacienteId }: { pacienteId: number }) {
     <Card>
       <CardHeader>
         <CardTitle>Triajes</CardTitle>
+        <CardDescription>
+          Signos vitales de las últimas atenciones
+        </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {!triajes ? (
-          <p className="text-sm text-muted-foreground">Cargando…</p>
+          <Skeleton className="h-24 w-full" />
         ) : triajes.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            El paciente no tiene triajes registrados.
-          </p>
+          <EstadoVacio
+            icono={HeartPulse}
+            titulo="Sin triajes registrados"
+            className="py-6"
+          />
         ) : (
           triajes.map((t, i) => (
             <details
               key={t.id}
               open={i === 0}
-              className="rounded-md border p-2"
+              className="group rounded-lg border bg-card p-3"
             >
-              <summary className="cursor-pointer text-sm font-medium">
+              <summary className="cursor-pointer text-sm font-medium marker:text-muted-foreground">
                 {formatoFechaHora.format(new Date(t.fechaHora))} ·{" "}
                 {t.motivoConsulta}
               </summary>
-              <div className="pt-2">
+              <div className="pt-3">
                 <TriajeResumen triaje={t} />
               </div>
             </details>
@@ -348,63 +483,94 @@ function HistorialTriajes({ pacienteId }: { pacienteId: number }) {
 function CitasDelPaciente({ pacienteId }: { pacienteId: number }) {
   const { datos: citas } = useApi<Cita[]>(`/api/citas?pacienteId=${pacienteId}`)
   return (
-    <Card>
-      <CardHeader>
+    <Card className="gap-0 pb-0">
+      <CardHeader className="pb-4">
         <CardTitle>Citas</CardTitle>
+        <CardDescription>Programadas, atendidas y canceladas</CardDescription>
       </CardHeader>
-      <CardContent>
-        {!citas ? (
-          <p className="text-sm text-muted-foreground">Cargando…</p>
-        ) : citas.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            El paciente no tiene citas registradas.
-          </p>
-        ) : (
-          <table className="w-full text-sm">
-            <tbody>
-              {citas.map((c) => (
-                <tr key={c.id} className="border-t first:border-t-0">
-                  <td className="py-2 pr-3 whitespace-nowrap">
-                    {formatearFecha(c.fecha)}{" "}
+      {!citas ? (
+        <CardContent className="pb-6">
+          <Skeleton className="h-24 w-full" />
+        </CardContent>
+      ) : citas.length === 0 ? (
+        <EstadoVacio
+          icono={ClipboardList}
+          titulo="El paciente no tiene citas registradas"
+        />
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/40 hover:bg-muted/40">
+              <TableHead className="pl-6">Fecha</TableHead>
+              <TableHead>Consultorio</TableHead>
+              <TableHead>Médico</TableHead>
+              <TableHead className="pr-6">Estado</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {citas.map((c) => (
+              <TableRow key={c.id}>
+                <TableCell className="pl-6 whitespace-nowrap">
+                  <span className="capitalize">{formatearFecha(c.fecha)}</span>
+                  <span className="ml-1 text-muted-foreground">
                     {c.sinCita ? "(sin cita)" : formatearHora(c.hora)}
-                  </td>
-                  <td className="py-2 pr-3">
-                    {c.consultorio.nombre} · {c.medico.nombreCompleto}
-                  </td>
-                  <td className="py-2">
-                    <EstadoCitaEtiqueta estado={c.estado} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </CardContent>
+                  </span>
+                </TableCell>
+                <TableCell>{c.consultorio.nombre}</TableCell>
+                <TableCell>{c.medico.nombreCompleto}</TableCell>
+                <TableCell className="pr-6">
+                  <EstadoCitaEtiqueta estado={c.estado} />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
     </Card>
   )
 }
 
+/** Estado del seguro como etiqueta: verde activo, rojo inactivo, ámbar sin verificar. */
 export function EstadoSeguroEtiqueta({ estado }: { estado: EstadoSeguro }) {
   const estilos: Record<EstadoSeguro, string> = {
-    ACTIVO: "text-green-700 dark:text-green-400",
-    INACTIVO: "text-destructive",
-    NO_VERIFICADO: "text-amber-600",
+    ACTIVO: "bg-green-600/10 text-green-700 dark:text-green-400",
+    INACTIVO: "bg-destructive/10 text-destructive",
+    NO_VERIFICADO: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+  }
+  const punto: Record<EstadoSeguro, string> = {
+    ACTIVO: "bg-green-600",
+    INACTIVO: "bg-destructive",
+    NO_VERIFICADO: "bg-amber-500",
   }
   return (
-    <span className={`font-medium ${estilos[estado]}`}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap",
+        estilos[estado]
+      )}
+    >
+      <span
+        className={cn("size-1.5 rounded-full", punto[estado])}
+        aria-hidden
+      />
       {NOMBRE_ESTADO_SEGURO[estado]}
     </span>
   )
 }
 
+/** Lista de datos en dos columnas: etiqueta arriba, valor abajo. */
 function Datos({ filas }: { filas: [string, React.ReactNode][] }) {
   return (
-    <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+    <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
       {filas.map(([etiqueta, valor]) => (
-        <React.Fragment key={etiqueta}>
-          <dt className="text-muted-foreground">{etiqueta}</dt>
-          <dd>{valor || "—"}</dd>
-        </React.Fragment>
+        <div key={etiqueta} className="flex min-w-0 flex-col gap-0.5">
+          <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            {etiqueta}
+          </dt>
+          <dd className="text-sm break-words">
+            {valor || <span className="text-muted-foreground">—</span>}
+          </dd>
+        </div>
       ))}
     </dl>
   )
@@ -449,11 +615,14 @@ function FormularioFinanciamiento({
     <Card>
       <CardHeader>
         <CardTitle>Cambiar financiamiento</CardTitle>
+        <CardDescription>
+          Si cambia el seguro, la verificación anterior deja de valer.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form
           onSubmit={handleSubmit(enviar)}
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-5"
           noValidate
         >
           {error && <Alerta>{error}</Alerta>}
@@ -462,12 +631,12 @@ function FormularioFinanciamiento({
             registrar={(campo) => register(campo)}
             errores={errors}
           />
-          <div className="flex gap-2">
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Guardando…" : "Guardar"}
-            </Button>
+          <div className="flex justify-end gap-2 border-t pt-4">
             <Button type="button" variant="outline" onClick={alCancelar}>
               Cancelar
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Guardando…" : "Guardar cambios"}
             </Button>
           </div>
         </form>

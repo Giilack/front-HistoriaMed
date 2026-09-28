@@ -1,10 +1,30 @@
 import * as React from "react"
+import { ChevronRight, Search, UserPlus, UsersRound } from "lucide-react"
+import { toast } from "sonner"
 
 import { useAuth } from "@/auth/AuthContext"
 import { Alerta, Input } from "@/components/form"
+import {
+  AvatarIniciales,
+  EncabezadoPagina,
+  EstadoVacio,
+  Paginacion,
+} from "@/components/pagina"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import {
   NOMBRE_FINANCIAMIENTO,
+  NOMBRE_TIPO_DOCUMENTO,
   type Pagina,
   type PacienteResumen,
 } from "@/lib/types"
@@ -14,9 +34,7 @@ import { EstadoSeguroEtiqueta, FichaPaciente } from "./FichaPaciente"
 import { FormularioPaciente } from "./FormularioPaciente"
 
 type Vista =
-  | { tipo: "busqueda" }
-  | { tipo: "nuevo" }
-  | { tipo: "ficha"; id: number; mensaje?: string }
+  { tipo: "busqueda" } | { tipo: "nuevo" } | { tipo: "ficha"; id: number }
 
 /**
  * Búsqueda de pacientes, registro (ADMISION) y ficha. Reglas en plan.md, secciones 5.1 y 5.2.
@@ -32,13 +50,12 @@ export function PacientesPage() {
   if (vista.tipo === "nuevo") {
     return (
       <FormularioPaciente
-        alGuardar={(p) =>
-          setVista({
-            tipo: "ficha",
-            id: p.id,
-            mensaje: `Paciente registrado con historia clínica ${p.numeroHc}.`,
+        alGuardar={(p) => {
+          toast.success("Paciente registrado", {
+            description: `Historia clínica ${p.numeroHc}`,
           })
-        }
+          setVista({ tipo: "ficha", id: p.id })
+        }}
         alCancelar={() => setVista({ tipo: "busqueda" })}
       />
     )
@@ -48,7 +65,6 @@ export function PacientesPage() {
       <FichaPaciente
         key={vista.id}
         id={vista.id}
-        mensajeInicial={vista.mensaje}
         alVolver={() => setVista({ tipo: "busqueda" })}
       />
     )
@@ -94,121 +110,145 @@ function Busqueda({
   )
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold">Pacientes</h1>
-        {puedeRegistrar && (
-          <Button onClick={alNuevo}>Registrar paciente</Button>
-        )}
-      </div>
-
-      <Input
-        autoFocus
-        className="max-w-md"
-        placeholder="Buscar por DNI, N.º de HC (HC-000012) o nombres y apellidos"
-        value={texto}
-        onChange={(e) => setTexto(e.target.value)}
+    <div className="flex flex-col gap-6">
+      <EncabezadoPagina
+        titulo="Pacientes"
+        descripcion="Busque por DNI, número de historia clínica o nombres y apellidos."
+        acciones={
+          puedeRegistrar && (
+            <Button onClick={alNuevo}>
+              <UserPlus />
+              Registrar paciente
+            </Button>
+          )
+        }
       />
 
-      {error && <Alerta>{error}</Alerta>}
-
-      <div className="overflow-x-auto rounded-md border">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-left">
-            <tr>
-              <th className="px-3 py-2 font-medium">HC</th>
-              <th className="px-3 py-2 font-medium">Paciente</th>
-              <th className="px-3 py-2 font-medium">Documento</th>
-              <th className="px-3 py-2 font-medium">Edad</th>
-              <th className="px-3 py-2 font-medium">Financiamiento</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pagina?.contenido.map((p) => (
-              <tr
-                key={p.id}
-                className="cursor-pointer border-t hover:bg-muted/50"
-                onClick={() => alAbrir(p.id)}
-                onKeyDown={(e) => e.key === "Enter" && alAbrir(p.id)}
-                tabIndex={0}
-              >
-                <td className="px-3 py-2 font-mono">{p.numeroHc}</td>
-                <td className="px-3 py-2 font-medium">{p.nombreCompleto}</td>
-                <td className="px-3 py-2">
-                  {p.numeroDocumento ?? (
-                    <span className="text-muted-foreground">Sin documento</span>
-                  )}
-                </td>
-                <td className="px-3 py-2">
-                  {p.edad} · {p.sexo === "FEMENINO" ? "F" : "M"}
-                </td>
-                <td className="px-3 py-2">
-                  {NOMBRE_FINANCIAMIENTO[p.tipoFinanciamiento]}
-                  {p.estadoSeguro && (
-                    <>
-                      {" · "}
-                      <EstadoSeguroEtiqueta estado={p.estadoSeguro} />
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {pagina?.contenido.length === 0 && (
-              <tr>
-                <td
-                  colSpan={5}
-                  className="px-3 py-6 text-center text-muted-foreground"
-                >
-                  {q ? (
-                    <>
-                      No se encontraron pacientes para «{q}».
-                      {puedeRegistrar && (
-                        <>
-                          {" "}
-                          <Button
-                            variant="link"
-                            className="h-auto p-0"
-                            onClick={alNuevo}
-                          >
-                            Registrar un paciente nuevo
-                          </Button>
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    "Aún no hay pacientes registrados."
-                  )}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {pagina && pagina.totalPaginas > 1 && (
-        <div className="flex items-center gap-2 text-sm">
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={numPagina === 0}
-            onClick={() => setNumPagina(numPagina - 1)}
-          >
-            Anterior
-          </Button>
-          <span>
-            Página {pagina.pagina + 1} de {pagina.totalPaginas} (
-            {pagina.totalElementos} pacientes)
-          </span>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={numPagina + 1 >= pagina.totalPaginas}
-            onClick={() => setNumPagina(numPagina + 1)}
-          >
-            Siguiente
-          </Button>
+      <Card className="gap-0 py-0">
+        <div className="border-b p-4">
+          <div className="relative max-w-md">
+            <Search
+              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
+            />
+            <Input
+              autoFocus
+              className="pl-9"
+              placeholder="Ej. 45678912, HC-000012 o Rosa Quispe"
+              value={texto}
+              onChange={(e) => setTexto(e.target.value)}
+              aria-label="Buscar paciente"
+            />
+          </div>
         </div>
-      )}
+
+        {error && (
+          <div className="p-4">
+            <Alerta>{error}</Alerta>
+          </div>
+        )}
+
+        {pagina?.contenido.length === 0 ? (
+          <EstadoVacio
+            icono={UsersRound}
+            titulo={
+              q
+                ? `No se encontraron pacientes para «${q}»`
+                : "Aún no hay pacientes registrados"
+            }
+            descripcion={
+              q
+                ? "Revise el número o pruebe con otra parte del nombre."
+                : undefined
+            }
+          >
+            {puedeRegistrar && (
+              <Button variant="outline" onClick={alNuevo}>
+                <UserPlus />
+                Registrar paciente nuevo
+              </Button>
+            )}
+          </EstadoVacio>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/40 hover:bg-muted/40">
+                <TableHead className="pl-4">Paciente</TableHead>
+                <TableHead>Historia clínica</TableHead>
+                <TableHead>Edad</TableHead>
+                <TableHead>Financiamiento</TableHead>
+                <TableHead className="w-10" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {!pagina
+                ? [0, 1, 2, 3, 4].map((i) => (
+                    <TableRow key={i}>
+                      <TableCell colSpan={5} className="px-4">
+                        <Skeleton className="h-9 w-full" />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                : pagina.contenido.map((p) => (
+                    <TableRow
+                      key={p.id}
+                      className="group cursor-pointer"
+                      onClick={() => alAbrir(p.id)}
+                      onKeyDown={(e) => e.key === "Enter" && alAbrir(p.id)}
+                      tabIndex={0}
+                    >
+                      <TableCell className="pl-4">
+                        <div className="flex items-center gap-3">
+                          <AvatarIniciales nombre={p.nombreCompleto} />
+                          <div className="min-w-0">
+                            <div className="truncate font-medium">
+                              {p.nombreCompleto}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {p.numeroDocumento
+                                ? `${NOMBRE_TIPO_DOCUMENTO[p.tipoDocumento]} ${p.numeroDocumento}`
+                                : "Sin documento"}
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="font-mono">
+                          {p.numeroHc}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {p.edad} · {p.sexo === "FEMENINO" ? "F" : "M"}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Badge variant="secondary">
+                            {NOMBRE_FINANCIAMIENTO[p.tipoFinanciamiento]}
+                          </Badge>
+                          {p.estadoSeguro && (
+                            <EstadoSeguroEtiqueta estado={p.estadoSeguro} />
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <ChevronRight className="size-4 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-marca" />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+            </TableBody>
+          </Table>
+        )}
+
+        {pagina && (
+          <Paginacion
+            pagina={pagina.pagina}
+            totalPaginas={pagina.totalPaginas}
+            totalElementos={pagina.totalElementos}
+            unidad="pacientes"
+            alCambiar={setNumPagina}
+          />
+        )}
+      </Card>
     </div>
   )
 }

@@ -148,6 +148,11 @@
 }
 
 @layer base {
+  /* Casillas y opciones nativas con el color de la marca */
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--marca);
+  }
   * {
     @apply border-border outline-ring/50;
     }

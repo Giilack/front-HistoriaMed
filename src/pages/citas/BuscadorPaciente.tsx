@@ -1,7 +1,10 @@
 import * as React from "react"
+import { Search } from "lucide-react"
 
 import { Input } from "@/components/form"
+import { AvatarIniciales } from "@/components/pagina"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import type { Pagina, PacienteResumen } from "@/lib/types"
 import { useApi, useDebounce } from "@/lib/useApi"
 
@@ -22,17 +25,23 @@ export function BuscadorPaciente({
 
   if (seleccionado) {
     return (
-      <div className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
-        <span>
-          <span className="font-mono text-muted-foreground">
-            {seleccionado.numeroHc}
-          </span>{" "}
-          <b>{seleccionado.nombreCompleto}</b> · {seleccionado.edad}
-          {seleccionado.numeroDocumento && ` · ${seleccionado.numeroDocumento}`}
+      <div className="flex items-center gap-3 rounded-lg border border-marca/30 bg-marca-claro/50 px-3 py-2 dark:bg-muted">
+        <AvatarIniciales
+          nombre={seleccionado.nombreCompleto}
+          className="size-8 bg-card"
+        />
+        <span className="min-w-0 flex-1 text-sm">
+          <b className="block truncate">{seleccionado.nombreCompleto}</b>
+          <span className="text-xs text-muted-foreground">
+            <span className="font-mono">{seleccionado.numeroHc}</span> ·{" "}
+            {seleccionado.edad}
+            {seleccionado.numeroDocumento &&
+              ` · ${seleccionado.numeroDocumento}`}
+          </span>
         </span>
         <Button
           type="button"
-          size="xs"
+          size="sm"
           variant="outline"
           onClick={() => alElegir(null)}
         >
@@ -44,13 +53,22 @@ export function BuscadorPaciente({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <Input
-        placeholder="Buscar paciente por DNI, HC o nombre…"
-        value={texto}
-        onChange={(e) => setTexto(e.target.value)}
-        aria-invalid={!!error}
-      />
-      {error && <span className="text-xs text-destructive">{error}</span>}
+      <div className="relative">
+        <Search
+          className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+          aria-hidden
+        />
+        <Input
+          className="pl-9"
+          placeholder="Buscar por DNI, HC o nombre…"
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+          aria-invalid={!!error}
+        />
+      </div>
+      {error && (
+        <span className="text-xs font-medium text-destructive">{error}</span>
+      )}
       {q.length >= 2 && <Resultados q={q} alElegir={alElegir} />}
     </div>
   )
@@ -66,29 +84,32 @@ function Resultados({
   const { datos } = useApi<Pagina<PacienteResumen>>(
     `/api/pacientes?${new URLSearchParams({ q, size: "6" })}`
   )
-  if (!datos) return <p className="text-xs text-muted-foreground">Buscando…</p>
+  if (!datos) return <Skeleton className="h-12 w-full" />
   if (datos.contenido.length === 0) {
     return (
-      <p className="text-xs text-muted-foreground">
+      <p className="rounded-lg border border-dashed px-3 py-3 text-sm text-muted-foreground">
         Sin resultados. Si es un paciente nuevo, regístrelo primero en
         «Pacientes».
       </p>
     )
   }
   return (
-    <ul className="divide-y rounded-md border text-sm">
+    <ul className="max-h-60 divide-y overflow-y-auto rounded-lg border bg-card text-sm">
       {datos.contenido.map((p) => (
         <li key={p.id}>
           <button
             type="button"
-            className="w-full px-3 py-2 text-left hover:bg-muted/50"
+            className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-marca-claro/50 focus-visible:bg-marca-claro/50 focus-visible:outline-none dark:hover:bg-muted"
             onClick={() => alElegir(p)}
           >
-            <span className="font-mono text-muted-foreground">
-              {p.numeroHc}
-            </span>{" "}
-            <b>{p.nombreCompleto}</b> · {p.edad}
-            {p.numeroDocumento && ` · ${p.numeroDocumento}`}
+            <AvatarIniciales nombre={p.nombreCompleto} className="size-8" />
+            <span className="min-w-0 flex-1">
+              <b className="block truncate font-medium">{p.nombreCompleto}</b>
+              <span className="text-xs text-muted-foreground">
+                <span className="font-mono">{p.numeroHc}</span> · {p.edad}
+                {p.numeroDocumento && ` · ${p.numeroDocumento}`}
+              </span>
+            </span>
           </button>
         </li>
       ))}

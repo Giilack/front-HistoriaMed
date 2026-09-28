@@ -5,7 +5,15 @@ import { z } from "zod"
 
 import { Alerta, Campo, Input, Select } from "@/components/form"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { AvatarIniciales } from "@/components/pagina"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { ApiError, api, json } from "@/lib/api"
 import { formatearHora, hoyISO } from "@/lib/fechas"
 import type { Cita, Consultorio, Medico, PacienteResumen } from "@/lib/types"
@@ -125,33 +133,41 @@ export function FormularioCita({
     sinCita: "Llegada sin cita",
     reprogramar: "Reprogramar cita",
   }[modo.tipo]
+  const descripcion = {
+    nueva: "Elija al paciente, el médico, el consultorio y el horario.",
+    sinCita:
+      "El paciente quedará registrado para hoy y pasará directamente a la cola de triaje.",
+    reprogramar:
+      "Cambie el médico, el consultorio o el horario. El paciente no cambia.",
+  }[modo.tipo]
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{titulo}</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <Dialog open onOpenChange={(abierto) => !abierto && alCancelar()}>
+      <DialogContent className="max-h-[92svh] overflow-y-auto sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{titulo}</DialogTitle>
+          <DialogDescription>{descripcion}</DialogDescription>
+        </DialogHeader>
         <form
           onSubmit={handleSubmit(enviar)}
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-5"
           noValidate
         >
           {error && <Alerta>{error}</Alerta>}
-          {modo.tipo === "sinCita" && (
-            <Alerta tipo="info">
-              El paciente quedará registrado para hoy y pasará directamente a la
-              cola de triaje.
-            </Alerta>
-          )}
 
           <Campo label="Paciente">
             {reprogramando ? (
-              <div className="rounded-md border px-3 py-2 text-sm">
-                <span className="font-mono text-muted-foreground">
-                  {reprogramando.paciente.numeroHc}
-                </span>{" "}
-                <b>{reprogramando.paciente.nombreCompleto}</b>
+              <div className="flex items-center gap-3 rounded-lg border bg-muted/40 px-3 py-2">
+                <AvatarIniciales
+                  nombre={reprogramando.paciente.nombreCompleto}
+                  className="size-8"
+                />
+                <span className="text-sm">
+                  <b>{reprogramando.paciente.nombreCompleto}</b>
+                  <span className="block font-mono text-xs text-muted-foreground">
+                    {reprogramando.paciente.numeroHc}
+                  </span>
+                </span>
               </div>
             ) : (
               <BuscadorPaciente
@@ -165,7 +181,7 @@ export function FormularioCita({
             )}
           </Campo>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <Campo label="Médico" error={errors.medicoId?.message}>
               <Select {...register("medicoId")}>
                 <option value="">Seleccione…</option>
@@ -205,7 +221,10 @@ export function FormularioCita({
             />
           </Campo>
 
-          <div className="flex gap-2">
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={alCancelar}>
+              Cancelar
+            </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting
                 ? "Guardando…"
@@ -213,12 +232,9 @@ export function FormularioCita({
                   ? "Registrar llegada"
                   : "Guardar cita"}
             </Button>
-            <Button type="button" variant="outline" onClick={alCancelar}>
-              Cancelar
-            </Button>
-          </div>
+          </DialogFooter>
         </form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   )
 }

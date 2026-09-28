@@ -2,9 +2,18 @@ import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, useWatch, type Path } from "react-hook-form"
 
+import {
+  IdCard,
+  Phone,
+  ShieldCheck,
+  Siren,
+  type LucideIcon,
+} from "lucide-react"
+
 import { Alerta, Campo, Input, Select } from "@/components/form"
+import { EncabezadoPagina } from "@/components/pagina"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { ApiError, api, json } from "@/lib/api"
 import {
   NOMBRE_TIPO_DOCUMENTO,
@@ -78,24 +87,21 @@ export function FormularioPaciente({
     }
   }
 
-  return (
+  const formulario = (
     <Card>
-      <CardHeader>
-        <CardTitle>
-          {esNuevo
-            ? "Registrar paciente"
-            : `Editar datos · ${paciente.numeroHc}`}
-        </CardTitle>
-      </CardHeader>
       <CardContent>
         <form
           onSubmit={handleSubmit(enviar)}
-          className="flex flex-col gap-6"
+          className="flex flex-col gap-8"
           noValidate
         >
           {error && <Alerta>{error}</Alerta>}
 
-          <Seccion titulo="Identificación">
+          <Seccion
+            titulo="Identificación"
+            descripcion="Documento y datos personales"
+            icono={IdCard}
+          >
             <Campo
               label="Tipo de documento"
               error={errors.tipoDocumento?.message}
@@ -153,15 +159,19 @@ export function FormularioPaciente({
                 <option value="MASCULINO">Masculino</option>
               </Select>
             </Campo>
+            {tipoDocumento === "SIN_DOCUMENTO" && (
+              <p className="text-xs text-muted-foreground sm:col-span-2 xl:col-span-3">
+                Se identificará por su número de historia clínica. Complete el
+                documento cuando lo tenga.
+              </p>
+            )}
           </Seccion>
-          {tipoDocumento === "SIN_DOCUMENTO" && (
-            <p className="-mt-3 text-xs text-muted-foreground">
-              Se identificará por su número de historia clínica. Complete el
-              documento cuando lo tenga.
-            </p>
-          )}
 
-          <Seccion titulo="Contacto">
+          <Seccion
+            titulo="Contacto"
+            descripcion="Para avisos y recordatorios"
+            icono={Phone}
+          >
             <Campo label="Teléfono" error={errors.telefono?.message}>
               <Input {...register("telefono")} inputMode="tel" />
             </Campo>
@@ -173,7 +183,11 @@ export function FormularioPaciente({
             </Campo>
           </Seccion>
 
-          <Seccion titulo="Contacto de emergencia">
+          <Seccion
+            titulo="Contacto de emergencia"
+            descripcion="A quién llamar si es necesario"
+            icono={Siren}
+          >
             <Campo
               label="Nombre"
               error={errors.contactoEmergenciaNombre?.message}
@@ -201,17 +215,24 @@ export function FormularioPaciente({
           </Seccion>
 
           {esNuevo && (
-            <div className="flex flex-col gap-3">
-              <h3 className="text-sm font-semibold">Financiamiento</h3>
+            <Seccion
+              titulo="Financiamiento"
+              descripcion="Seguro con el que se atiende"
+              icono={ShieldCheck}
+              libre
+            >
               <CamposFinanciamiento
                 tipo={tipoFinanciamiento}
                 registrar={(campo) => register(`financiamiento.${campo}`)}
                 errores={errors.financiamiento}
               />
-            </div>
+            </Seccion>
           )}
 
-          <div className="flex gap-2">
+          <div className="flex justify-end gap-2 border-t pt-5">
+            <Button type="button" variant="outline" onClick={alCancelar}>
+              Cancelar
+            </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting
                 ? "Guardando…"
@@ -219,27 +240,60 @@ export function FormularioPaciente({
                   ? "Registrar paciente"
                   : "Guardar cambios"}
             </Button>
-            <Button type="button" variant="outline" onClick={alCancelar}>
-              Cancelar
-            </Button>
           </div>
         </form>
       </CardContent>
     </Card>
   )
+
+  // En la edición el formulario va dentro de la ficha (que ya tiene su encabezado)
+  if (!esNuevo) return formulario
+  return (
+    <div className="flex flex-col gap-6">
+      <EncabezadoPagina
+        titulo="Registrar paciente"
+        descripcion="Se le asignará un número de historia clínica al guardar."
+        alVolver={alCancelar}
+        textoVolver="Volver a pacientes"
+      />
+      {formulario}
+    </div>
+  )
 }
 
+/** Sección del formulario: título, descripción e icono a la izquierda; campos a la derecha. */
 function Seccion({
   titulo,
+  descripcion,
+  icono: Icono,
+  libre = false,
   children,
 }: {
   titulo: string
+  descripcion: string
+  icono: LucideIcon
+  /** Sin grilla propia (el contenido ya organiza sus campos). */
+  libre?: boolean
   children: React.ReactNode
 }) {
   return (
-    <div className="flex flex-col gap-3">
-      <h3 className="text-sm font-semibold">{titulo}</h3>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
-    </div>
+    <section className="grid gap-4 border-b pb-8 last-of-type:border-b-0 lg:grid-cols-[14rem_1fr]">
+      <div className="flex gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-marca-claro text-marca dark:bg-muted">
+          <Icono className="size-[18px]" aria-hidden />
+        </span>
+        <div>
+          <h3 className="text-sm font-semibold">{titulo}</h3>
+          <p className="text-xs text-muted-foreground">{descripcion}</p>
+        </div>
+      </div>
+      {libre ? (
+        children
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {children}
+        </div>
+      )}
+    </section>
   )
 }
