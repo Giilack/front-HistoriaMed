@@ -8,6 +8,14 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
 /** Título de la página, descripción opcional y acciones a la derecha. */
@@ -156,5 +164,38 @@ export function Paginacion({
         </Button>
       </div>
     </div>
+  )
+}
+
+/** Tarjeta de una sección de formulario o de detalle, con icono de marca y título. */
+export function SeccionTarjeta({
+  icono: Icono,
+  titulo,
+  descripcion,
+  accion,
+  className,
+  children,
+}: {
+  icono: LucideIcon
+  titulo: React.ReactNode
+  descripcion?: React.ReactNode
+  accion?: React.ReactNode
+  className?: string
+  children: React.ReactNode
+}) {
+  return (
+    <Card className={className}>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-marca-claro text-marca dark:bg-muted">
+            <Icono className="size-4" aria-hidden />
+          </span>
+          {titulo}
+        </CardTitle>
+        {descripcion && <CardDescription>{descripcion}</CardDescription>}
+        {accion && <CardAction>{accion}</CardAction>}
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">{children}</CardContent>
+    </Card>
   )
 }

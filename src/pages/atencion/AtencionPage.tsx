@@ -1,12 +1,32 @@
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
+import {
+  Activity,
+  ClipboardPlus,
+  FileText,
+  NotebookPen,
+  Pill,
+  Save,
+  ShieldAlert,
+  Signature,
+  Stethoscope,
+  TriangleAlert,
+  X,
+} from "lucide-react"
 import { useFieldArray, useForm } from "react-hook-form"
+import { toast } from "sonner"
 import { z } from "zod"
 
 import { useConfirmacion } from "@/components/Confirmacion"
 import { Alerta, Campo, Input, Select, Textarea } from "@/components/form"
+import {
+  AvatarIniciales,
+  EncabezadoPagina,
+  SeccionTarjeta,
+} from "@/components/pagina"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { ApiError, api, json } from "@/lib/api"
 import {
   NOMBRE_VIA,
@@ -17,6 +37,7 @@ import {
   type ViaAdministracion,
 } from "@/lib/types"
 import { useApi } from "@/lib/useApi"
+import { cn } from "@/lib/utils"
 import { PanelDocumentos } from "@/pages/documentos/PanelDocumentos"
 import { PanelAlergias } from "@/pages/triaje/PanelAlergias"
 import { TriajeResumen } from "@/pages/triaje/TriajeResumen"
@@ -130,51 +151,58 @@ export function AtencionPage({
   alVolver: () => void
 }) {
   const [atencion, setAtencion] = React.useState(inicial)
-  const [mensaje, setMensaje] = React.useState<string | null>(null)
   const p = atencion.paciente
+  const cerrada = atencion.estado === "CERRADA"
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <p className="text-sm text-muted-foreground">Atención médica</p>
-          <h1 className="text-2xl font-semibold">{p.nombreCompleto}</h1>
-          <p className="text-muted-foreground">
-            {p.numeroHc} · {p.edad} ·{" "}
-            {p.sexo === "FEMENINO" ? "Femenino" : "Masculino"}
-          </p>
-        </div>
-        <Button variant="ghost" onClick={alVolver}>
-          ← Volver a mis pacientes
-        </Button>
-      </div>
+    <div className="flex flex-col gap-6">
+      <EncabezadoPagina
+        alVolver={alVolver}
+        textoVolver="Volver a mis pacientes"
+        titulo={
+          <span className="flex items-center gap-3">
+            <AvatarIniciales nombre={p.nombreCompleto} className="size-10" />
+            {p.nombreCompleto}
+          </span>
+        }
+        descripcion={
+          <>
+            Atención médica · <span className="font-mono">{p.numeroHc}</span> ·{" "}
+            {p.edad} · {p.sexo === "FEMENINO" ? "Femenino" : "Masculino"}
+          </>
+        }
+        acciones={
+          cerrada ? (
+            <Badge className="bg-green-600/12 text-green-700 dark:text-green-400">
+              <Signature />
+              Firmada
+            </Badge>
+          ) : (
+            <Badge className="bg-amber-500/15 text-amber-800 dark:text-amber-400">
+              <NotebookPen />
+              Borrador
+            </Badge>
+          )
+        }
+      />
 
-      {mensaje && <Alerta tipo="exito">{mensaje}</Alerta>}
-
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid items-start gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          {atencion.estado === "CERRADA" ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>Atención firmada</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <AtencionDetalle
-                  atencion={atencion}
-                  alActualizar={setAtencion}
-                />
-              </CardContent>
-            </Card>
+          {cerrada ? (
+            <SeccionTarjeta icono={Signature} titulo="Atención firmada">
+              <AtencionDetalle atencion={atencion} alActualizar={setAtencion} />
+            </SeccionTarjeta>
           ) : (
             <EditorAtencion
               atencion={atencion}
-              alGuardar={(a, cerrada) => {
+              alGuardar={(a, firmada) => {
                 setAtencion(a)
-                setMensaje(
-                  cerrada
-                    ? "Atención firmada. Ya no se puede modificar; las correcciones se agregan como adendas."
-                    : "Borrador guardado."
-                )
+                if (firmada)
+                  toast.success("Atención firmada", {
+                    description:
+                      "Ya no se puede modificar; las correcciones se agregan como adendas.",
+                  })
+                else toast.success("Borrador guardado")
               }}
             />
           )}
@@ -182,22 +210,12 @@ export function AtencionPage({
 
         <div className="flex flex-col gap-4">
           <TriajeDeLaCita citaId={atencion.citaId} />
-          <Card>
-            <CardHeader>
-              <CardTitle>Alergias</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <PanelAlergias pacienteId={p.id} />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Documentos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <PanelDocumentos pacienteId={p.id} citaId={atencion.citaId} />
-            </CardContent>
-          </Card>
+          <SeccionTarjeta icono={ShieldAlert} titulo="Alergias">
+            <PanelAlergias pacienteId={p.id} />
+          </SeccionTarjeta>
+          <SeccionTarjeta icono={FileText} titulo="Documentos">
+            <PanelDocumentos pacienteId={p.id} citaId={atencion.citaId} />
+          </SeccionTarjeta>
           <HistoriaClinica pacienteId={p.id} excluirId={atencion.id} />
         </div>
       </div>
@@ -208,18 +226,17 @@ export function AtencionPage({
 function TriajeDeLaCita({ citaId }: { citaId: number }) {
   const { datos } = useApi<Triaje>(`/api/citas/${citaId}/triaje`)
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Triaje</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {datos ? (
-          <TriajeResumen triaje={datos} />
-        ) : (
-          <p className="text-sm text-muted-foreground">Cargando…</p>
-        )}
-      </CardContent>
-    </Card>
+    <SeccionTarjeta icono={Activity} titulo="Triaje">
+      {datos ? (
+        <TriajeResumen triaje={datos} />
+      ) : (
+        <div className="grid grid-cols-2 gap-2">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-12" />
+          ))}
+        </div>
+      )}
+    </SeccionTarjeta>
   )
 }
 
@@ -295,56 +312,56 @@ function EditorAtencion({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Atención en curso</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form
-          className="flex flex-col gap-5"
-          noValidate
-          onSubmit={(e) => e.preventDefault()}
-        >
-          {error && <Alerta>{error}</Alerta>}
+    <form
+      className="flex flex-col gap-6"
+      noValidate
+      onSubmit={(e) => e.preventDefault()}
+    >
+      {error && <Alerta>{error}</Alerta>}
 
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="sm:col-span-2">
-              <Campo
-                label="Motivo de consulta"
-                error={errors.motivoConsulta?.message}
-              >
-                <Input {...register("motivoConsulta")} />
-              </Campo>
-            </div>
+      <SeccionTarjeta icono={Stethoscope} titulo="Anamnesis y examen">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="sm:col-span-2">
             <Campo
-              label="Tiempo de enfermedad"
-              error={errors.tiempoEnfermedad?.message}
+              label="Motivo de consulta"
+              error={errors.motivoConsulta?.message}
             >
-              <Input
-                {...register("tiempoEnfermedad")}
-                placeholder="ej. 3 días"
-              />
+              <Input {...register("motivoConsulta")} />
             </Campo>
           </div>
           <Campo
-            label="Anamnesis (relato, síntomas, antecedentes relevantes)"
-            error={errors.anamnesis?.message}
+            label="Tiempo de enfermedad"
+            error={errors.tiempoEnfermedad?.message}
           >
-            <Textarea {...register("anamnesis")} rows={4} />
+            <Input {...register("tiempoEnfermedad")} placeholder="ej. 3 días" />
           </Campo>
-          <Campo label="Examen físico" error={errors.examenFisico?.message}>
-            <Textarea {...register("examenFisico")} rows={4} />
-          </Campo>
+        </div>
+        <Campo
+          label="Anamnesis (relato, síntomas, antecedentes relevantes)"
+          error={errors.anamnesis?.message}
+        >
+          <Textarea {...register("anamnesis")} rows={4} />
+        </Campo>
+        <Campo label="Examen físico" error={errors.examenFisico?.message}>
+          <Textarea {...register("examenFisico")} rows={4} />
+        </Campo>
+      </SeccionTarjeta>
 
-          {/* Diagnósticos */}
-          <div className="flex flex-col gap-2">
-            <h3 className="text-sm font-semibold">Diagnósticos (CIE-10)</h3>
+      <SeccionTarjeta
+        icono={ClipboardPlus}
+        titulo="Diagnósticos (CIE-10)"
+        descripcion="El marcado como principal encabeza la atención."
+      >
+        {diagnosticos.fields.length > 0 && (
+          <ul className="flex flex-col gap-2">
             {diagnosticos.fields.map((f, i) => (
-              <div
+              <li
                 key={f.id}
-                className="flex flex-wrap items-center gap-2 rounded-md border px-3 py-2 text-sm"
+                className="flex flex-wrap items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm has-[input[type=radio]:checked]:border-marca has-[input[type=radio]:checked]:bg-marca-claro/40 dark:has-[input[type=radio]:checked]:bg-muted/60"
               >
-                <span className="font-mono">{f.codigo}</span>
+                <Badge variant="outline" className="font-mono">
+                  {f.codigo}
+                </Badge>
                 <span className="min-w-40 flex-1">{f.descripcion}</span>
                 <Select
                   className="w-36"
@@ -353,7 +370,7 @@ function EditorAtencion({
                   <option value="PRESUNTIVO">Presuntivo</option>
                   <option value="DEFINITIVO">Definitivo</option>
                 </Select>
-                <label className="flex items-center gap-1 text-xs">
+                <label className="flex cursor-pointer items-center gap-1.5 text-xs font-medium">
                   <input
                     type="radio"
                     name="diagnostico-principal"
@@ -364,187 +381,207 @@ function EditorAtencion({
                 </label>
                 <Button
                   type="button"
-                  size="xs"
+                  size="icon-xs"
                   variant="ghost"
+                  className="text-muted-foreground hover:text-destructive"
+                  aria-label={`Quitar ${f.codigo}`}
                   onClick={() => diagnosticos.remove(i)}
                 >
-                  Quitar
+                  <X />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <BuscadorCatalogo<Cie10>
+          ruta="/api/cie10"
+          placeholder="Agregar diagnóstico: busque por código (J02) o nombre (faringitis)…"
+          clave={(c) => c.codigo}
+          etiqueta={(c) => (
+            <>
+              <span className="font-mono text-marca">{c.codigo}</span>{" "}
+              {c.descripcion}
+            </>
+          )}
+          alElegir={(c) => {
+            if (getValues("diagnosticos").some((d) => d.codigo === c.codigo))
+              return
+            diagnosticos.append({
+              codigo: c.codigo,
+              descripcion: c.descripcion,
+              tipo: "PRESUNTIVO",
+              // El primero que se agrega queda como principal
+              principal: getValues("diagnosticos").length === 0,
+            })
+          }}
+        />
+      </SeccionTarjeta>
+
+      <SeccionTarjeta
+        icono={Pill}
+        titulo="Receta"
+        descripcion="Al guardar, el sistema verifica cada medicamento contra las alergias registradas del paciente."
+      >
+        {receta.fields.map((f, i) => {
+          const e = errors.receta?.[i]
+          return (
+            <div
+              key={f.id}
+              className={cn(
+                "flex flex-col gap-3 rounded-lg border border-l-4 border-l-marca bg-card p-3 text-sm",
+                alertasAlergia[i] && "border-destructive border-l-destructive"
+              )}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2 font-semibold">
+                  <Pill className="size-4 text-marca" aria-hidden />
+                  {f.medicamento}
+                </span>
+                <Button
+                  type="button"
+                  size="icon-xs"
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-destructive"
+                  aria-label={`Quitar ${f.medicamento}`}
+                  onClick={() => {
+                    receta.remove(i)
+                    // Las alertas son por posición: al quitar un ítem se descartan y se recalculan al guardar
+                    setAlertasAlergia({})
+                  }}
+                >
+                  <X />
                 </Button>
               </div>
-            ))}
-            <BuscadorCatalogo<Cie10>
-              ruta="/api/cie10"
-              placeholder="Agregar diagnóstico: busque por código (J02) o nombre (faringitis)…"
-              clave={(c) => c.codigo}
-              etiqueta={(c) => (
-                <>
-                  <span className="font-mono">{c.codigo}</span> {c.descripcion}
-                </>
-              )}
-              alElegir={(c) => {
-                if (
-                  getValues("diagnosticos").some((d) => d.codigo === c.codigo)
-                )
-                  return
-                diagnosticos.append({
-                  codigo: c.codigo,
-                  descripcion: c.descripcion,
-                  tipo: "PRESUNTIVO",
-                  // El primero que se agrega queda como principal
-                  principal: getValues("diagnosticos").length === 0,
-                })
-              }}
-            />
-          </div>
-
-          {/* Receta */}
-          <div className="flex flex-col gap-2">
-            <h3 className="text-sm font-semibold">Receta</h3>
-            {receta.fields.map((f, i) => {
-              const e = errors.receta?.[i]
-              return (
-                <div
-                  key={f.id}
-                  className={`flex flex-col gap-2 rounded-md border p-3 text-sm ${alertasAlergia[i] ? "border-destructive" : ""}`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <b>{f.medicamento}</b>
-                    <Button
-                      type="button"
-                      size="xs"
-                      variant="ghost"
-                      onClick={() => {
-                        receta.remove(i)
-                        // Las alertas son por posición: al quitar un ítem se descartan y se recalculan al guardar
-                        setAlertasAlergia({})
-                      }}
-                    >
-                      Quitar
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-                    <Campo label="Dosis" error={e?.dosis?.message}>
-                      <Input
-                        {...register(`receta.${i}.dosis`)}
-                        placeholder="1 tableta"
-                      />
-                    </Campo>
-                    <Campo label="Vía">
-                      <Select {...register(`receta.${i}.via`)}>
-                        {(Object.keys(NOMBRE_VIA) as ViaAdministracion[]).map(
-                          (v) => (
-                            <option key={v} value={v}>
-                              {NOMBRE_VIA[v]}
-                            </option>
-                          )
-                        )}
-                      </Select>
-                    </Campo>
-                    <Campo label="Frecuencia" error={e?.frecuencia?.message}>
-                      <Input
-                        {...register(`receta.${i}.frecuencia`)}
-                        placeholder="cada 8 horas"
-                      />
-                    </Campo>
-                    <Campo label="Duración" error={e?.duracion?.message}>
-                      <Input
-                        {...register(`receta.${i}.duracion`)}
-                        placeholder="5 días"
-                      />
-                    </Campo>
-                    <Campo label="Cantidad" error={e?.cantidad?.message}>
-                      <Input
-                        {...register(`receta.${i}.cantidad`)}
-                        inputMode="numeric"
-                      />
-                    </Campo>
-                  </div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                <Campo label="Dosis" error={e?.dosis?.message}>
                   <Input
-                    {...register(`receta.${i}.indicaciones`)}
-                    placeholder="Indicaciones (opcional): después de comer…"
+                    {...register(`receta.${i}.dosis`)}
+                    placeholder="1 tableta"
                   />
-                  {alertasAlergia[i] && (
-                    <div className="flex flex-col gap-2 rounded-md bg-destructive/10 p-2">
-                      <p className="font-medium text-destructive">
-                        ⚠ {alertasAlergia[i]}
-                      </p>
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          className="size-4"
-                          {...register(`receta.${i}.confirmarAlergia`)}
-                        />
-                        Conozco la alerta y decido recetarlo
-                      </label>
-                      <Input
-                        {...register(`receta.${i}.justificacionAlergia`)}
-                        placeholder="Justificación clínica (obligatoria para recetarlo)"
-                      />
-                    </div>
-                  )}
+                </Campo>
+                <Campo label="Vía">
+                  <Select {...register(`receta.${i}.via`)}>
+                    {(Object.keys(NOMBRE_VIA) as ViaAdministracion[]).map(
+                      (v) => (
+                        <option key={v} value={v}>
+                          {NOMBRE_VIA[v]}
+                        </option>
+                      )
+                    )}
+                  </Select>
+                </Campo>
+                <Campo label="Frecuencia" error={e?.frecuencia?.message}>
+                  <Input
+                    {...register(`receta.${i}.frecuencia`)}
+                    placeholder="cada 8 horas"
+                  />
+                </Campo>
+                <Campo label="Duración" error={e?.duracion?.message}>
+                  <Input
+                    {...register(`receta.${i}.duracion`)}
+                    placeholder="5 días"
+                  />
+                </Campo>
+                <Campo label="Cantidad" error={e?.cantidad?.message}>
+                  <Input
+                    {...register(`receta.${i}.cantidad`)}
+                    inputMode="numeric"
+                  />
+                </Campo>
+              </div>
+              <Input
+                {...register(`receta.${i}.indicaciones`)}
+                placeholder="Indicaciones (opcional): después de comer…"
+              />
+              {alertasAlergia[i] && (
+                <div className="flex flex-col gap-2 rounded-lg bg-destructive/10 p-3">
+                  <p className="flex items-start gap-2 font-medium text-destructive">
+                    <TriangleAlert
+                      className="mt-0.5 size-4 shrink-0"
+                      aria-hidden
+                    />
+                    {alertasAlergia[i]}
+                  </p>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      className="size-4"
+                      {...register(`receta.${i}.confirmarAlergia`)}
+                    />
+                    Conozco la alerta y decido recetarlo
+                  </label>
+                  <Input
+                    {...register(`receta.${i}.justificacionAlergia`)}
+                    placeholder="Justificación clínica (obligatoria para recetarlo)"
+                  />
                 </div>
-              )
-            })}
-            <BuscadorCatalogo<MedicamentoCatalogo>
-              ruta="/api/medicamentos"
-              placeholder="Agregar medicamento: busque por nombre (amoxicilina, paracetamol)…"
-              clave={(m) => m.id}
-              etiqueta={(m) => m.descripcion}
-              alElegir={(m) => {
-                if (getValues("receta").some((r) => r.medicamentoId === m.id))
-                  return
-                receta.append({
-                  medicamentoId: m.id,
-                  medicamento: m.descripcion,
-                  dosis: "",
-                  via: "ORAL",
-                  frecuencia: "",
-                  duracion: "",
-                  cantidad: "",
-                  indicaciones: "",
-                  confirmarAlergia: false,
-                  justificacionAlergia: "",
-                })
-              }}
-            />
-            <p className="text-xs text-muted-foreground">
-              Al guardar, el sistema verifica cada medicamento contra las
-              alergias registradas del paciente.
-            </p>
-          </div>
+              )}
+            </div>
+          )
+        })}
+        <BuscadorCatalogo<MedicamentoCatalogo>
+          ruta="/api/medicamentos"
+          placeholder="Agregar medicamento: busque por nombre (amoxicilina, paracetamol)…"
+          clave={(m) => m.id}
+          etiqueta={(m) => m.descripcion}
+          alElegir={(m) => {
+            if (getValues("receta").some((r) => r.medicamentoId === m.id))
+              return
+            receta.append({
+              medicamentoId: m.id,
+              medicamento: m.descripcion,
+              dosis: "",
+              via: "ORAL",
+              frecuencia: "",
+              duracion: "",
+              cantidad: "",
+              indicaciones: "",
+              confirmarAlergia: false,
+              justificacionAlergia: "",
+            })
+          }}
+        />
+      </SeccionTarjeta>
 
-          <Campo
-            label="Plan de trabajo (exámenes auxiliares, interconsultas, control)"
-            error={errors.planTrabajo?.message}
-          >
-            <Textarea {...register("planTrabajo")} />
-          </Campo>
-          <Campo
-            label="Indicaciones al paciente"
-            error={errors.indicaciones?.message}
-          >
-            <Textarea {...register("indicaciones")} />
-          </Campo>
+      <SeccionTarjeta icono={NotebookPen} titulo="Plan e indicaciones">
+        <Campo
+          label="Plan de trabajo (exámenes auxiliares, interconsultas, control)"
+          error={errors.planTrabajo?.message}
+        >
+          <Textarea {...register("planTrabajo")} />
+        </Campo>
+        <Campo
+          label="Indicaciones al paciente"
+          error={errors.indicaciones?.message}
+        >
+          <Textarea {...register("indicaciones")} />
+        </Campo>
+      </SeccionTarjeta>
 
-          <div className="flex flex-wrap gap-2 border-t pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isSubmitting}
-              onClick={handleSubmit((d) => enviar(d, false))}
-            >
-              Guardar borrador
-            </Button>
-            <Button
-              type="button"
-              disabled={isSubmitting}
-              onClick={handleSubmit((d) => enviar(d, true))}
-            >
-              {isSubmitting ? "Guardando…" : "Firmar y cerrar atención"}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+      {/* Barra de acciones fija al pie mientras se escribe */}
+      <div className="sticky bottom-0 z-10 -mx-1 flex flex-wrap items-center justify-end gap-2 rounded-xl border bg-card/95 p-3 shadow-sm backdrop-blur">
+        <span className="mr-auto hidden text-xs text-muted-foreground sm:block">
+          Guarde el borrador cuantas veces quiera; al firmar ya no se puede
+          editar.
+        </span>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={isSubmitting}
+          onClick={handleSubmit((d) => enviar(d, false))}
+        >
+          <Save />
+          Guardar borrador
+        </Button>
+        <Button
+          type="button"
+          disabled={isSubmitting}
+          onClick={handleSubmit((d) => enviar(d, true))}
+        >
+          <Signature />
+          {isSubmitting ? "Guardando…" : "Firmar y cerrar atención"}
+        </Button>
+      </div>
+    </form>
   )
 }

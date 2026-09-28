@@ -1,8 +1,10 @@
 import * as React from "react"
+import { Ban, Eye, FileImage, FileText, FolderOpen, Upload } from "lucide-react"
 
 import { useAuth } from "@/auth/AuthContext"
 import { useConfirmacion } from "@/components/Confirmacion"
 import { Alerta, Campo, Input, Select } from "@/components/form"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ApiError, abrirArchivo, api, json } from "@/lib/api"
 import { fechaLocal, hoyISO } from "@/lib/fechas"
@@ -92,39 +94,62 @@ export function PanelDocumentos({
       {(error ?? errorCarga) && <Alerta>{error ?? errorCarga}</Alerta>}
 
       {documentos && vigentes.length === 0 && (
-        <p className="text-muted-foreground">No hay documentos.</p>
+        <p className="flex items-center gap-2 rounded-lg border border-dashed px-3 py-2 text-muted-foreground">
+          <FolderOpen className="size-4 shrink-0" aria-hidden />
+          No hay documentos.
+        </p>
       )}
       {vigentes.length > 0 && (
-        <ul className="flex flex-col gap-1.5">
-          {vigentes.map((d) => (
-            <li
-              key={d.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-2 py-1.5"
-            >
-              <span className="min-w-0">
-                <b>{NOMBRE_TIPO_DOCUMENTO_CLINICO[d.tipo]}</b>
-                {d.descripcion && ` · ${d.descripcion}`}
-                <span className="block truncate text-xs text-muted-foreground">
-                  {d.fechaDocumento &&
-                    `${formatoFecha.format(fechaLocal(d.fechaDocumento))} · `}
-                  {d.nombreOriginal} · {tamanio(d.tamanioBytes)} · subido por{" "}
-                  {d.subidoPor}
+        <ul className="flex flex-col gap-2">
+          {vigentes.map((d) => {
+            const imagen = d.contentType.startsWith("image/")
+            const Icono = imagen ? FileImage : FileText
+            return (
+              <li
+                key={d.id}
+                className="flex items-start gap-3 rounded-lg border bg-card px-3 py-2"
+              >
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-marca-claro text-marca dark:bg-muted">
+                  <Icono className="size-4" aria-hidden />
                 </span>
-              </span>
-              <span className="flex gap-1">
-                {puedeVer && (
-                  <Button size="xs" variant="outline" onClick={() => ver(d)}>
-                    Ver
-                  </Button>
-                )}
-                {puedeAnular(d) && (
-                  <Button size="xs" variant="ghost" onClick={() => anular(d)}>
-                    Anular
-                  </Button>
-                )}
-              </span>
-            </li>
-          ))}
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-center gap-1.5">
+                    <Badge variant="secondary">
+                      {NOMBRE_TIPO_DOCUMENTO_CLINICO[d.tipo]}
+                    </Badge>
+                    {d.descripcion && (
+                      <span className="font-medium">{d.descripcion}</span>
+                    )}
+                  </span>
+                  <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                    {d.fechaDocumento &&
+                      `${formatoFecha.format(fechaLocal(d.fechaDocumento))} · `}
+                    {d.nombreOriginal} · {tamanio(d.tamanioBytes)} · subido por{" "}
+                    {d.subidoPor}
+                  </span>
+                </span>
+                <span className="flex shrink-0 gap-1">
+                  {puedeVer && (
+                    <Button size="xs" variant="outline" onClick={() => ver(d)}>
+                      <Eye />
+                      Ver
+                    </Button>
+                  )}
+                  {puedeAnular(d) && (
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      className="text-muted-foreground hover:text-destructive"
+                      onClick={() => anular(d)}
+                    >
+                      <Ban />
+                      Anular
+                    </Button>
+                  )}
+                </span>
+              </li>
+            )
+          })}
         </ul>
       )}
 
@@ -145,6 +170,7 @@ export function PanelDocumentos({
           className="self-start"
           onClick={() => setSubiendo(true)}
         >
+          <Upload />
           Subir documento
         </Button>
       )}
@@ -153,7 +179,7 @@ export function PanelDocumentos({
         <div className="text-xs">
           <button
             type="button"
-            className="text-muted-foreground underline"
+            className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
             onClick={() => setVerAnulados((v) => !v)}
           >
             {verAnulados ? "Ocultar" : "Ver"} {anulados.length} anulado(s)
@@ -225,13 +251,13 @@ function FormularioSubida({
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-md border p-3">
+    <div className="flex flex-col gap-3 rounded-lg border bg-muted/30 p-3">
       {error && <Alerta>{error}</Alerta>}
       <Campo label="Archivo (PDF, JPG o PNG; máximo 10 MB)">
         <Input
           type="file"
           accept={ACEPTADOS}
-          className="py-1.5"
+          className="py-1.5 file:mr-3 file:rounded-md file:bg-marca-claro file:px-2 file:text-marca-oscuro dark:file:bg-muted dark:file:text-foreground"
           onChange={(e) => setArchivo(e.target.files?.[0] ?? null)}
         />
       </Campo>
@@ -271,6 +297,7 @@ function FormularioSubida({
       </Campo>
       <div className="flex gap-2">
         <Button type="button" size="sm" disabled={enviando} onClick={subir}>
+          <Upload />
           {enviando ? "Subiendo…" : "Subir"}
         </Button>
         <Button type="button" size="sm" variant="outline" onClick={alCancelar}>

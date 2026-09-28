@@ -1,6 +1,14 @@
 import * as React from "react"
+import {
+  MessageSquarePlus,
+  Pill,
+  Printer,
+  Signature,
+  TriangleAlert,
+} from "lucide-react"
 
 import { Alerta, Textarea } from "@/components/form"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ApiError, api, json } from "@/lib/api"
 import { NOMBRE_VIA, type Atencion } from "@/lib/types"
@@ -36,7 +44,10 @@ export function AtencionDetalle({
   ]
   return (
     <div className="flex flex-col gap-4 text-sm">
-      <p className="text-xs text-muted-foreground">
+      <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+        {a.cerradaEn && (
+          <Signature className="size-3.5 text-green-600" aria-hidden />
+        )}
         {a.medico.nombreCompleto}
         {a.medico.cmp && ` · CMP ${a.medico.cmp}`} ·{" "}
         {formatoFechaHora.format(new Date(a.inicioEn))}
@@ -49,19 +60,28 @@ export function AtencionDetalle({
         .filter(([, texto]) => texto)
         .map(([titulo, texto]) => (
           <div key={titulo}>
-            <h4 className="font-semibold">{titulo}</h4>
+            <h4 className="mb-0.5 text-xs font-semibold tracking-wide text-marca-oscuro uppercase dark:text-muted-foreground">
+              {titulo}
+            </h4>
             <p className="whitespace-pre-line">{texto}</p>
           </div>
         ))}
 
       <div>
-        <h4 className="font-semibold">Diagnósticos</h4>
-        <ul className="list-disc pl-5">
+        <h4 className="mb-1.5 text-xs font-semibold tracking-wide text-marca-oscuro uppercase dark:text-muted-foreground">
+          Diagnósticos
+        </h4>
+        <ul className="flex flex-col gap-1.5">
           {a.diagnosticos.map((d) => (
-            <li key={d.codigo}>
-              <span className="font-mono">{d.codigo}</span> {d.descripcion} ·{" "}
-              {d.tipo === "PRESUNTIVO" ? "Presuntivo" : "Definitivo"}
-              {d.principal && <b> (principal)</b>}
+            <li key={d.codigo} className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="font-mono">
+                {d.codigo}
+              </Badge>
+              <span className="min-w-0 flex-1">{d.descripcion}</span>
+              <span className="text-xs text-muted-foreground">
+                {d.tipo === "PRESUNTIVO" ? "Presuntivo" : "Definitivo"}
+              </span>
+              {d.principal && <Badge variant="secondary">Principal</Badge>}
             </li>
           ))}
         </ul>
@@ -70,27 +90,67 @@ export function AtencionDetalle({
       {a.receta.length > 0 && (
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <h4 className="font-semibold">Receta</h4>
+            <h4 className="text-xs font-semibold tracking-wide text-marca-oscuro uppercase dark:text-muted-foreground">
+              Receta
+            </h4>
             {a.estado === "CERRADA" && (
               <Button
                 size="xs"
                 variant="outline"
                 onClick={() => window.print()}
               >
+                <Printer />
                 Imprimir receta
               </Button>
             )}
           </div>
-          <ListaReceta atencion={a} />
+          <ul className="flex flex-col gap-2">
+            {a.receta.map((r) => (
+              <li
+                key={r.medicamentoId}
+                className="flex gap-2.5 rounded-lg border bg-muted/30 px-3 py-2"
+              >
+                <Pill
+                  className="mt-0.5 size-4 shrink-0 text-marca"
+                  aria-hidden
+                />
+                <div className="min-w-0">
+                  <b>{r.medicamento}</b>
+                  <p className="text-muted-foreground">
+                    {r.dosis}, vía {NOMBRE_VIA[r.via].toLowerCase()},{" "}
+                    {r.frecuencia}, por {r.duracion} · Cantidad: {r.cantidad}
+                  </p>
+                  {r.indicaciones && (
+                    <p className="text-xs">{r.indicaciones}</p>
+                  )}
+                  {r.alergiaConfirmada && (
+                    <p className="mt-1 flex items-start gap-1.5 text-xs text-destructive">
+                      <TriangleAlert
+                        className="mt-px size-3.5 shrink-0"
+                        aria-hidden
+                      />
+                      Recetado pese a alerta de alergia. Justificación:{" "}
+                      {r.justificacionAlergia}
+                    </p>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
           <RecetaImprimible atencion={a} />
         </div>
       )}
 
       {(a.adendas.length > 0 || (a.estado === "CERRADA" && alActualizar)) && (
         <div className="flex flex-col gap-2 border-t pt-3">
-          <h4 className="font-semibold">Adendas</h4>
+          <h4 className="text-xs font-semibold tracking-wide text-marca-oscuro uppercase dark:text-muted-foreground">
+            Adendas
+          </h4>
           {a.adendas.map((ad) => (
-            <div key={ad.id} className="rounded-md bg-muted/50 px-3 py-2">
+            <div
+              key={ad.id}
+              className="rounded-lg border-l-4 border-l-marca-acento bg-marca-claro/50 px-3 py-2 dark:bg-muted/50"
+            >
               <p className="text-xs text-muted-foreground">
                 {ad.autor} · {formatoFechaHora.format(new Date(ad.creadoEn))}
               </p>
@@ -106,6 +166,7 @@ export function AtencionDetalle({
   )
 }
 
+/** Receta en texto corrido para la versión impresa. */
 function ListaReceta({ atencion }: { atencion: Atencion }) {
   return (
     <ol className="list-decimal pl-5">
@@ -175,6 +236,7 @@ function FormularioAdenda({
         className="self-start"
         onClick={() => setAbierto(true)}
       >
+        <MessageSquarePlus />
         Agregar adenda
       </Button>
     )
@@ -203,7 +265,7 @@ function FormularioAdenda({
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 rounded-lg border bg-muted/30 p-3">
       {error && <Alerta>{error}</Alerta>}
       <Textarea
         value={texto}

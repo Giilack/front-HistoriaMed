@@ -1,4 +1,5 @@
 import * as React from "react"
+import { Plus, Search } from "lucide-react"
 
 import { Input } from "@/components/form"
 import { useApi, useDebounce } from "@/lib/useApi"
@@ -24,7 +25,12 @@ export function BuscadorCatalogo<T>({
 
   return (
     <div className="relative">
+      <Search
+        className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+        aria-hidden
+      />
       <Input
+        className="pl-9"
         placeholder={placeholder}
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
@@ -58,7 +64,7 @@ function Resultados<T>({
   const { datos } = useApi<T[]>(ruta)
   if (!datos) return null
   return (
-    <ul className="absolute z-10 mt-1 max-h-64 w-full overflow-y-auto rounded-md border bg-background text-sm shadow-md">
+    <ul className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border bg-popover p-1 text-sm text-popover-foreground shadow-lg">
       {datos.length === 0 && (
         <li className="px-3 py-2 text-muted-foreground">
           Sin resultados en el catálogo.
@@ -68,10 +74,14 @@ function Resultados<T>({
         <li key={clave(item)}>
           <button
             type="button"
-            className="w-full px-3 py-2 text-left hover:bg-muted"
+            className="group flex w-full items-center gap-2 rounded-md px-3 py-2 text-left hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:outline-none"
             onClick={() => alElegir(item)}
           >
-            {etiqueta(item)}
+            <span className="min-w-0 flex-1">{etiqueta(item)}</span>
+            <Plus
+              className="size-4 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
+              aria-hidden
+            />
           </button>
         </li>
       ))}

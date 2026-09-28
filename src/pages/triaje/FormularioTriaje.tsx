@@ -3,10 +3,29 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, useWatch, type Path } from "react-hook-form"
 import { z } from "zod"
 
+import {
+  Accessibility,
+  Activity,
+  Baby,
+  ClipboardList,
+  Gauge,
+  History,
+  Send,
+  ShieldAlert,
+  Siren,
+  Weight,
+} from "lucide-react"
+
 import { Alerta, Campo, Input, Select } from "@/components/form"
+import {
+  AvatarIniciales,
+  EncabezadoPagina,
+  SeccionTarjeta,
+} from "@/components/pagina"
 import { ListaAlertas, PrioridadEtiqueta } from "@/components/PrioridadEtiqueta"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { ApiError, api, json } from "@/lib/api"
 import {
   NIVEL_PRIORIDAD,
@@ -17,6 +36,7 @@ import {
   type Triaje,
 } from "@/lib/types"
 import { useApi, useDebounce } from "@/lib/useApi"
+import { cn } from "@/lib/utils"
 
 import { PanelAlergias } from "./PanelAlergias"
 import { TriajeResumen } from "./TriajeResumen"
@@ -217,187 +237,228 @@ export function FormularioTriaje({
 
   const p = cita.paciente
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <p className="text-sm text-muted-foreground">
-            Turno {cita.numeroTurno} · {cita.consultorio.nombre} ·{" "}
+    <div className="flex flex-col gap-6">
+      <EncabezadoPagina
+        alVolver={alCancelar}
+        textoVolver="Volver a la cola"
+        titulo={
+          <span className="flex items-center gap-3">
+            <AvatarIniciales nombre={p.nombreCompleto} className="size-10" />
+            {p.nombreCompleto}
+          </span>
+        }
+        descripcion={
+          <>
+            <span className="font-mono">{p.numeroHc}</span> · {p.edad} ·{" "}
+            {p.sexo === "FEMENINO" ? "Femenino" : "Masculino"} · Turno{" "}
+            {cita.numeroTurno} · {cita.consultorio.nombre} ·{" "}
             {cita.medico.nombreCompleto}
-          </p>
-          <h1 className="text-2xl font-semibold">{p.nombreCompleto}</h1>
-          <p className="text-muted-foreground">
-            {p.numeroHc} · {p.edad} ·{" "}
-            {p.sexo === "FEMENINO" ? "Femenino" : "Masculino"}
             {cita.motivo && ` · Motivo de la cita: ${cita.motivo}`}
-          </p>
-        </div>
-        <Button variant="ghost" onClick={alCancelar}>
-          ← Volver a la cola
-        </Button>
-      </div>
+          </>
+        }
+      />
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Triaje</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form
-              onSubmit={handleSubmit(enviar)}
-              className="flex flex-col gap-5"
-              noValidate
+      <div className="grid items-start gap-6 lg:grid-cols-3">
+        <form
+          onSubmit={handleSubmit(enviar)}
+          className="flex flex-col gap-6 lg:col-span-2"
+          noValidate
+        >
+          {errorGeneral && <Alerta>{errorGeneral}</Alerta>}
+
+          <SeccionTarjeta icono={ClipboardList} titulo="Motivo de consulta">
+            <Campo
+              label="Lo que relata el paciente"
+              error={errors.motivoConsulta?.message}
             >
-              {errorGeneral && <Alerta>{errorGeneral}</Alerta>}
+              <Input {...register("motivoConsulta")} autoFocus />
+            </Campo>
+          </SeccionTarjeta>
 
+          <SeccionTarjeta
+            icono={Activity}
+            titulo="Signos vitales"
+            descripcion="Los campos con * son obligatorios. Acepta coma decimal (36,8)."
+          >
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               <Campo
-                label="Motivo de consulta (lo que relata el paciente)"
-                error={errors.motivoConsulta?.message}
+                label="PA sistólica"
+                error={errors.presionSistolica?.message}
               >
-                <Input {...register("motivoConsulta")} autoFocus />
-              </Campo>
-
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <Campo
-                  label="PA sistólica (mmHg)"
-                  error={errors.presionSistolica?.message}
-                >
+                <ConUnidad unidad="mmHg">
                   <Input
                     {...register("presionSistolica")}
                     inputMode="numeric"
                   />
-                </Campo>
-                <Campo
-                  label="PA diastólica (mmHg)"
-                  error={errors.presionDiastolica?.message}
-                >
+                </ConUnidad>
+              </Campo>
+              <Campo
+                label="PA diastólica"
+                error={errors.presionDiastolica?.message}
+              >
+                <ConUnidad unidad="mmHg">
                   <Input
                     {...register("presionDiastolica")}
                     inputMode="numeric"
                   />
-                </Campo>
-                <Campo
-                  label="FC (lpm) *"
-                  error={errors.frecuenciaCardiaca?.message}
-                >
+                </ConUnidad>
+              </Campo>
+              <Campo
+                label="Frec. cardiaca *"
+                error={errors.frecuenciaCardiaca?.message}
+              >
+                <ConUnidad unidad="lpm">
                   <Input
                     {...register("frecuenciaCardiaca")}
                     inputMode="numeric"
                   />
-                </Campo>
-                <Campo
-                  label="FR (rpm)"
-                  error={errors.frecuenciaRespiratoria?.message}
-                >
+                </ConUnidad>
+              </Campo>
+              <Campo
+                label="Frec. respiratoria"
+                error={errors.frecuenciaRespiratoria?.message}
+              >
+                <ConUnidad unidad="rpm">
                   <Input
                     {...register("frecuenciaRespiratoria")}
                     inputMode="numeric"
                   />
-                </Campo>
-                <Campo
-                  label="Temperatura (°C) *"
-                  error={errors.temperatura?.message}
-                >
+                </ConUnidad>
+              </Campo>
+              <Campo label="Temperatura *" error={errors.temperatura?.message}>
+                <ConUnidad unidad="°C">
                   <Input {...register("temperatura")} inputMode="decimal" />
-                </Campo>
-                <Campo
-                  label="Saturación O₂ (%) *"
-                  error={errors.saturacion?.message}
-                >
+                </ConUnidad>
+              </Campo>
+              <Campo label="Saturación O₂ *" error={errors.saturacion?.message}>
+                <ConUnidad unidad="%">
                   <Input {...register("saturacion")} inputMode="numeric" />
-                </Campo>
-                <Campo label="Peso (kg) *" error={errors.peso?.message}>
+                </ConUnidad>
+              </Campo>
+            </div>
+          </SeccionTarjeta>
+
+          <SeccionTarjeta icono={Weight} titulo="Antropometría y condición">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+              <Campo label="Peso *" error={errors.peso?.message}>
+                <ConUnidad unidad="kg">
                   <Input {...register("peso")} inputMode="decimal" />
-                </Campo>
-                <Campo label="Talla (cm)" error={errors.talla?.message}>
+                </ConUnidad>
+              </Campo>
+              <Campo label="Talla" error={errors.talla?.message}>
+                <ConUnidad unidad="cm">
                   <Input {...register("talla")} inputMode="decimal" />
-                </Campo>
-                <Campo
-                  label="Perímetro abd. (cm)"
-                  error={errors.perimetroAbdominal?.message}
-                >
+                </ConUnidad>
+              </Campo>
+              <Campo
+                label="Perímetro abdominal"
+                error={errors.perimetroAbdominal?.message}
+              >
+                <ConUnidad unidad="cm">
                   <Input
                     {...register("perimetroAbdominal")}
                     inputMode="decimal"
                   />
-                </Campo>
-              </div>
-
-              <div className="flex flex-wrap gap-6 text-sm">
-                {p.sexo === "FEMENINO" && (
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      className="size-4"
-                      {...register("gestante")}
-                    />
-                    Gestante
-                  </label>
-                )}
-                <label className="flex items-center gap-2">
+                </ConUnidad>
+              </Campo>
+            </div>
+            <div className="flex flex-wrap gap-3 text-sm">
+              {p.sexo === "FEMENINO" && (
+                <label className="flex cursor-pointer items-center gap-2 rounded-lg border bg-card px-3 py-2 has-checked:border-marca has-checked:bg-marca-claro/60 dark:has-checked:bg-muted">
                   <input
                     type="checkbox"
                     className="size-4"
-                    {...register("discapacidad")}
+                    {...register("gestante")}
                   />
-                  Persona con discapacidad
+                  <Baby className="size-4 text-muted-foreground" aria-hidden />
+                  Gestante
                 </label>
-              </div>
+              )}
+              <label className="flex cursor-pointer items-center gap-2 rounded-lg border bg-card px-3 py-2 has-checked:border-marca has-checked:bg-marca-claro/60 dark:has-checked:bg-muted">
+                <input
+                  type="checkbox"
+                  className="size-4"
+                  {...register("discapacidad")}
+                />
+                <Accessibility
+                  className="size-4 text-muted-foreground"
+                  aria-hidden
+                />
+                Persona con discapacidad
+              </label>
+            </div>
+          </SeccionTarjeta>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Campo label="Prioridad">
-                  <Select {...register("prioridad")}>
-                    <option value="">
-                      {evaluacion
-                        ? `Usar la sugerida (${NOMBRE_PRIORIDAD[evaluacion.prioridadSugerida]})`
-                        : "Usar la sugerida por el sistema"}
+          <SeccionTarjeta icono={Siren} titulo="Prioridad y observaciones">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Campo label="Prioridad">
+                <Select {...register("prioridad")}>
+                  <option value="">
+                    {evaluacion
+                      ? `Usar la sugerida (${NOMBRE_PRIORIDAD[evaluacion.prioridadSugerida]})`
+                      : "Usar la sugerida por el sistema"}
+                  </option>
+                  {(Object.keys(NOMBRE_PRIORIDAD) as Prioridad[]).map((pr) => (
+                    <option key={pr} value={pr}>
+                      {NOMBRE_PRIORIDAD[pr]}
                     </option>
-                    {(Object.keys(NOMBRE_PRIORIDAD) as Prioridad[]).map(
-                      (pr) => (
-                        <option key={pr} value={pr}>
-                          {NOMBRE_PRIORIDAD[pr]}
-                        </option>
-                      )
-                    )}
-                  </Select>
-                </Campo>
-                {bajaPrioridad && (
-                  <Campo
-                    label="Justificación (obligatoria)"
-                    error={errors.justificacionPrioridad?.message}
-                  >
-                    <Input
-                      {...register("justificacionPrioridad")}
-                      placeholder="ej. saturación habitual del paciente con EPOC"
-                    />
-                  </Campo>
-                )}
-              </div>
-
-              <Campo
-                label="Observaciones (opcional)"
-                error={errors.observaciones?.message}
-              >
-                <Input {...register("observaciones")} />
+                  ))}
+                </Select>
               </Campo>
+              {bajaPrioridad && (
+                <Campo
+                  label="Justificación (obligatoria)"
+                  error={errors.justificacionPrioridad?.message}
+                >
+                  <Input
+                    {...register("justificacionPrioridad")}
+                    placeholder="ej. saturación habitual del paciente con EPOC"
+                  />
+                </Campo>
+              )}
+            </div>
+            <Campo
+              label="Observaciones (opcional)"
+              error={errors.observaciones?.message}
+            >
+              <Input {...register("observaciones")} />
+            </Campo>
+          </SeccionTarjeta>
 
-              <div className="flex gap-2">
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting
-                    ? "Guardando…"
-                    : "Registrar triaje y enviar al médico"}
-                </Button>
-                <Button type="button" variant="outline" onClick={alCancelar}>
-                  Cancelar
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" size="lg" disabled={isSubmitting}>
+              <Send />
+              {isSubmitting
+                ? "Guardando…"
+                : "Registrar triaje y enviar al médico"}
+            </Button>
+            <Button
+              type="button"
+              size="lg"
+              variant="outline"
+              onClick={alCancelar}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </form>
 
-        <div className="flex flex-col gap-4">
-          <Card>
+        <div className="flex flex-col gap-4 lg:sticky lg:top-20">
+          <Card
+            className={cn(
+              "border-t-4",
+              evaluacion?.prioridadSugerida === "URGENTE"
+                ? "border-t-destructive"
+                : evaluacion?.prioridadSugerida === "PREFERENTE"
+                  ? "border-t-amber-500"
+                  : "border-t-marca"
+            )}
+          >
             <CardHeader>
-              <CardTitle>Evaluación</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Gauge className="size-4 text-marca" aria-hidden />
+                Evaluación en tiempo real
+              </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-3 text-sm">
               {!claveActual && (
@@ -407,23 +468,28 @@ export function FormularioTriaje({
               )}
               {errorEvaluacion && <Alerta>{errorEvaluacion}</Alerta>}
               {claveActual && !evaluacion && !errorEvaluacion && (
-                <p className="text-muted-foreground">Evaluando…</p>
+                <div className="flex flex-col gap-2">
+                  <Skeleton className="h-5 w-40" />
+                  <Skeleton className="h-8 w-full" />
+                </div>
               )}
               {evaluacion && (
                 <>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-muted-foreground">
-                      Prioridad sugerida:
+                      Prioridad sugerida
                     </span>
                     <PrioridadEtiqueta
                       prioridad={evaluacion.prioridadSugerida}
                     />
                   </div>
                   {evaluacion.imc && (
-                    <p>
-                      <span className="text-muted-foreground">IMC: </span>
-                      <b>{evaluacion.imc}</b>
-                    </p>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-muted-foreground">IMC</span>
+                      <span className="font-semibold tabular-nums">
+                        {evaluacion.imc}
+                      </span>
+                    </div>
                   )}
                   <ListaAlertas alertas={evaluacion.alertas} />
                   {evaluacion.prioridadSugerida === "URGENTE" && (
@@ -439,7 +505,10 @@ export function FormularioTriaje({
 
           <Card>
             <CardHeader>
-              <CardTitle>Alergias</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <ShieldAlert className="size-4 text-marca" aria-hidden />
+                Alergias
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <PanelAlergias pacienteId={p.id} />
@@ -453,6 +522,24 @@ export function FormularioTriaje({
   )
 }
 
+/** Muestra la unidad de medida dentro del campo, a la derecha. */
+function ConUnidad({
+  unidad,
+  children,
+}: {
+  unidad: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="relative [&_input]:pr-14">
+      {children}
+      <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs text-muted-foreground">
+        {unidad}
+      </span>
+    </div>
+  )
+}
+
 /** Triaje anterior del paciente, para comparar (por ejemplo, el peso o la presión de la vez pasada). */
 function UltimoTriaje({ pacienteId }: { pacienteId: number }) {
   const { datos } = useApi<Triaje[]>(`/api/pacientes/${pacienteId}/triajes`)
@@ -461,7 +548,10 @@ function UltimoTriaje({ pacienteId }: { pacienteId: number }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Triaje anterior</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <History className="size-4 text-marca" aria-hidden />
+          Triaje anterior
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <TriajeResumen triaje={ultimo} />

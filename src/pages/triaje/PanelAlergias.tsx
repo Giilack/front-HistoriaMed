@@ -1,4 +1,5 @@
 import * as React from "react"
+import { Ban, Plus, ShieldCheck } from "lucide-react"
 
 import { useConfirmacion } from "@/components/Confirmacion"
 import { Alerta, Campo, Input, Select } from "@/components/form"
@@ -12,11 +13,24 @@ import {
   type TipoAlergia,
 } from "@/lib/types"
 import { useApi } from "@/lib/useApi"
+import { cn } from "@/lib/utils"
 
-const ESTILO_GRAVEDAD: Record<GravedadAlergia, string> = {
-  LEVE: "text-muted-foreground",
-  MODERADA: "text-amber-700 dark:text-amber-400",
-  SEVERA: "font-semibold text-destructive",
+const ESTILO_GRAVEDAD: Record<
+  GravedadAlergia,
+  { etiqueta: string; borde: string }
+> = {
+  LEVE: {
+    etiqueta: "bg-muted text-muted-foreground",
+    borde: "border-l-border",
+  },
+  MODERADA: {
+    etiqueta: "bg-amber-500/15 text-amber-800 dark:text-amber-400",
+    borde: "border-l-amber-500",
+  },
+  SEVERA: {
+    etiqueta: "bg-destructive/12 font-semibold text-destructive",
+    borde: "border-l-destructive",
+  },
 }
 
 /**
@@ -65,7 +79,8 @@ export function PanelAlergias({ pacienteId }: { pacienteId: number }) {
     <div className="flex flex-col gap-3">
       {(error ?? errorCarga) && <Alerta>{error ?? errorCarga}</Alerta>}
       {alergias && activas.length === 0 && (
-        <p className="text-sm text-muted-foreground">
+        <p className="flex items-center gap-2 rounded-lg border border-dashed px-3 py-2 text-sm text-muted-foreground">
+          <ShieldCheck className="size-4 shrink-0" aria-hidden />
           Sin alergias registradas. Pregunte al paciente.
         </p>
       )}
@@ -74,24 +89,35 @@ export function PanelAlergias({ pacienteId }: { pacienteId: number }) {
           {activas.map((a) => (
             <li
               key={a.id}
-              className="flex items-start justify-between gap-2 rounded-md border px-2 py-1.5"
+              className={cn(
+                "flex items-start justify-between gap-2 rounded-lg border border-l-4 bg-card px-3 py-2",
+                ESTILO_GRAVEDAD[a.gravedad].borde
+              )}
             >
-              <span>
-                <b>{a.sustancia}</b>{" "}
-                <span className="text-xs text-muted-foreground">
-                  ({NOMBRE_TIPO_ALERGIA[a.tipo]})
-                </span>
-                {" · "}
-                <span className={ESTILO_GRAVEDAD[a.gravedad]}>
-                  {NOMBRE_GRAVEDAD[a.gravedad]}
-                </span>
-                {a.reaccion && (
-                  <span className="block text-xs text-muted-foreground">
-                    {a.reaccion}
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <b>{a.sustancia}</b>
+                  <span
+                    className={cn(
+                      "rounded-full px-1.5 py-0.5 text-[11px]",
+                      ESTILO_GRAVEDAD[a.gravedad].etiqueta
+                    )}
+                  >
+                    {NOMBRE_GRAVEDAD[a.gravedad]}
                   </span>
-                )}
-              </span>
-              <Button size="xs" variant="ghost" onClick={() => inactivar(a)}>
+                </div>
+                <span className="block text-xs text-muted-foreground">
+                  {NOMBRE_TIPO_ALERGIA[a.tipo]}
+                  {a.reaccion && ` · ${a.reaccion}`}
+                </span>
+              </div>
+              <Button
+                size="xs"
+                variant="ghost"
+                className="text-muted-foreground hover:text-destructive"
+                onClick={() => inactivar(a)}
+              >
+                <Ban />
                 Inactivar
               </Button>
             </li>
@@ -115,6 +141,7 @@ export function PanelAlergias({ pacienteId }: { pacienteId: number }) {
           className="self-start"
           onClick={() => setAgregando(true)}
         >
+          <Plus />
           Registrar alergia
         </Button>
       )}
@@ -123,7 +150,7 @@ export function PanelAlergias({ pacienteId }: { pacienteId: number }) {
         <div className="text-xs">
           <button
             type="button"
-            className="text-muted-foreground underline"
+            className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
             onClick={() => setVerInactivas((v) => !v)}
           >
             {verInactivas ? "Ocultar" : "Ver"} {inactivas.length} inactiva(s)
@@ -181,7 +208,7 @@ function FormularioAlergia({
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-md border p-3">
+    <div className="flex flex-col gap-3 rounded-lg border bg-muted/30 p-3">
       {error && <Alerta>{error}</Alerta>}
       <div className="grid gap-3 sm:grid-cols-2">
         <Campo label="Tipo">
