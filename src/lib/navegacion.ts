@@ -23,7 +23,6 @@ export type Vista =
   | "consultorios"
   | "auditoria"
   | "reportes"
-  | "cuenta"
 
 export interface OpcionMenu {
   vista: Vista
@@ -102,11 +101,7 @@ export const MENU: OpcionMenu[] = [
   },
 ]
 
-/** Título de cada vista (para la cabecera). "cuenta" no está en el menú: se abre desde el menú del usuario. */
-export const TITULO_VISTA: Record<Vista, string> = {
-  ...(Object.fromEntries(MENU.map((m) => [m.vista, m.etiqueta])) as Record<
-    Vista,
-    string
-  >),
-  cuenta: "Mi contraseña",
-}
+/** Título de cada vista (para la cabecera). */
+export const TITULO_VISTA = Object.fromEntries(
+  MENU.map((m) => [m.vista, m.etiqueta])
+) as Record<Vista, string>

@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 import type * as React from "react"
 import {
   ArrowLeft,
@@ -92,34 +91,6 @@ export function EstadoVacio({
       )}
       {children && <div className="mt-2">{children}</div>}
     </div>
-  )
-}
-
-/** Iniciales a partir de "Apellidos, Nombres" (formato de nombreCompleto) o de "Nombres Apellidos". */
-export function iniciales(nombreCompleto: string) {
-  const [primero, segundo] = nombreCompleto.includes(",")
-    ? nombreCompleto.split(",").reverse()
-    : nombreCompleto.split(" ")
-  return `${primero?.trim()[0] ?? ""}${segundo?.trim()[0] ?? ""}`.toUpperCase()
-}
-
-export function AvatarIniciales({
-  nombre,
-  className,
-}: {
-  nombre: string
-  className?: string
-}) {
-  return (
-    <span
-      className={cn(
-        "flex size-9 shrink-0 items-center justify-center rounded-full bg-marca-claro text-xs font-semibold text-marca-oscuro dark:bg-marca-oscuro dark:text-marca-claro",
-        className
-      )}
-      aria-hidden
-    >
-      {iniciales(nombre)}
-    </span>
   )
 }
 

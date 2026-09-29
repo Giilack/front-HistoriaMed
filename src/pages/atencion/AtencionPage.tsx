@@ -19,11 +19,7 @@ import { z } from "zod"
 
 import { useConfirmacion } from "@/components/Confirmacion"
 import { Alerta, Campo, Input, Select, Textarea } from "@/components/form"
-import {
-  AvatarIniciales,
-  EncabezadoPagina,
-  SeccionTarjeta,
-} from "@/components/pagina"
+import { EncabezadoPagina, SeccionTarjeta } from "@/components/pagina"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -159,12 +155,7 @@ export function AtencionPage({
       <EncabezadoPagina
         alVolver={alVolver}
         textoVolver="Volver a mis pacientes"
-        titulo={
-          <span className="flex items-center gap-3">
-            <AvatarIniciales nombre={p.nombreCompleto} className="size-10" />
-            {p.nombreCompleto}
-          </span>
-        }
+        titulo={p.nombreCompleto}
         descripcion={
           <>
             Atención médica · <span className="font-mono">{p.numeroHc}</span> ·{" "}

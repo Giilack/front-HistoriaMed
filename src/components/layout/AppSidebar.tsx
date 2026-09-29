@@ -1,9 +1,15 @@
-import { ChevronsUpDown, KeyRound, LogOut, Moon, Sun } from "lucide-react"
+import {
+  ChevronsUpDown,
+  CircleUserRound,
+  KeyRound,
+  LogOut,
+  Moon,
+  Sun,
+} from "lucide-react"
 
 import { useAuth } from "@/auth/AuthContext"
 import { Marca } from "@/components/Marca"
 import { useTheme } from "@/components/theme-provider"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,9 +42,11 @@ const GRUPOS: OpcionMenu["grupo"][] = ["General", "Atención", "Administración"
 export function AppSidebar({
   vista,
   alNavegar,
+  alCambiarPassword,
 }: {
   vista: Vista
   alNavegar: (v: Vista) => void
+  alCambiarPassword: () => void
 }) {
   const { usuario } = useAuth()
   if (!usuario) return null
@@ -81,19 +89,26 @@ export function AppSidebar({
       </SidebarContent>
 
       <SidebarFooter className="border-t">
-        <MenuUsuario alNavegar={alNavegar} />
+        <MenuUsuario
+          alNavegar={alNavegar}
+          alCambiarPassword={alCambiarPassword}
+        />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   )
 }
 
-function MenuUsuario({ alNavegar }: { alNavegar: (v: Vista) => void }) {
+function MenuUsuario({
+  alNavegar,
+  alCambiarPassword,
+}: {
+  alNavegar: (v: Vista) => void
+  alCambiarPassword: () => void
+}) {
   const { usuario, logout } = useAuth()
   const { theme, setTheme } = useTheme()
   if (!usuario) return null
-  const iniciales =
-    `${usuario.nombres[0] ?? ""}${usuario.apellidos[0] ?? ""}`.toUpperCase()
   const oscuro =
     theme === "dark" ||
     (theme === "system" &&
@@ -111,11 +126,8 @@ function MenuUsuario({ alNavegar }: { alNavegar: (v: Vista) => void }) {
               />
             }
           >
-            <Avatar className="size-8 rounded-lg">
-              <AvatarFallback className="rounded-lg bg-marca text-xs font-semibold text-white">
-                {iniciales}
-              </AvatarFallback>
-            </Avatar>
+            {/* Icono solo para que el botón se vea con el menú contraído */}
+            <CircleUserRound className="size-5! text-marca" aria-hidden />
             <span className="grid flex-1 text-left leading-tight">
               <span className="truncate text-sm font-medium text-foreground">
                 {usuario.nombres} {usuario.apellidos}
@@ -144,7 +156,7 @@ function MenuUsuario({ alNavegar }: { alNavegar: (v: Vista) => void }) {
               </DropdownMenuLabel>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => alNavegar("cuenta")}>
+            <DropdownMenuItem onClick={alCambiarPassword}>
               <KeyRound />
               Cambiar contraseña
             </DropdownMenuItem>

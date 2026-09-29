@@ -5,7 +5,6 @@ import { z } from "zod"
 
 import { Alerta, Campo, Input, Select } from "@/components/form"
 import { Button } from "@/components/ui/button"
-import { AvatarIniciales } from "@/components/pagina"
 import {
   Dialog,
   DialogContent,
@@ -158,10 +157,6 @@ export function FormularioCita({
           <Campo label="Paciente">
             {reprogramando ? (
               <div className="flex items-center gap-3 rounded-lg border bg-muted/40 px-3 py-2">
-                <AvatarIniciales
-                  nombre={reprogramando.paciente.nombreCompleto}
-                  className="size-8"
-                />
                 <span className="text-sm">
                   <b>{reprogramando.paciente.nombreCompleto}</b>
                   <span className="block font-mono text-xs text-muted-foreground">

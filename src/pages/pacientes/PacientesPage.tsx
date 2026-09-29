@@ -4,12 +4,7 @@ import { toast } from "sonner"
 
 import { useAuth } from "@/auth/AuthContext"
 import { Alerta, Input } from "@/components/form"
-import {
-  AvatarIniciales,
-  EncabezadoPagina,
-  EstadoVacio,
-  Paginacion,
-} from "@/components/pagina"
+import { EncabezadoPagina, EstadoVacio, Paginacion } from "@/components/pagina"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -199,7 +194,6 @@ function Busqueda({
                     >
                       <TableCell className="pl-4">
                         <div className="flex items-center gap-3">
-                          <AvatarIniciales nombre={p.nombreCompleto} />
                           <div className="min-w-0">
                             <div className="truncate font-medium">
                               {p.nombreCompleto}

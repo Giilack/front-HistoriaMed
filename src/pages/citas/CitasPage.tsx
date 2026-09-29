@@ -15,11 +15,7 @@ import { toast } from "sonner"
 import { useConfirmacion } from "@/components/Confirmacion"
 import { EstadoCitaEtiqueta } from "@/components/EstadoCitaEtiqueta"
 import { Alerta, Input, Select } from "@/components/form"
-import {
-  AvatarIniciales,
-  EncabezadoPagina,
-  EstadoVacio,
-} from "@/components/pagina"
+import { EncabezadoPagina, EstadoVacio } from "@/components/pagina"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import {
@@ -361,9 +357,6 @@ export function CitasPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <AvatarIniciales
-                              nombre={c.paciente.nombreCompleto}
-                            />
                             <div className="min-w-0">
                               <div className="truncate font-medium">
                                 {c.paciente.nombreCompleto}

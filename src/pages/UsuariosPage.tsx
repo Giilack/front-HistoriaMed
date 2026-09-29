@@ -20,12 +20,7 @@ import { toast } from "sonner"
 import { useAuth } from "@/auth/AuthContext"
 import { useConfirmacion } from "@/components/Confirmacion"
 import { Alerta, Campo, Input, Select } from "@/components/form"
-import {
-  AvatarIniciales,
-  EncabezadoPagina,
-  EstadoVacio,
-  Paginacion,
-} from "@/components/pagina"
+import { EncabezadoPagina, EstadoVacio, Paginacion } from "@/components/pagina"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -285,9 +280,6 @@ export function UsuariosPage() {
                       >
                         <TableCell className="pl-4">
                           <div className="flex items-center gap-3">
-                            <AvatarIniciales
-                              nombre={`${u.nombres} ${u.apellidos}`}
-                            />
                             <div className="min-w-0">
                               <div className="truncate font-medium">
                                 {u.apellidos}, {u.nombres}

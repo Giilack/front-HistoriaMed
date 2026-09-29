@@ -153,6 +153,26 @@
   input[type="radio"] {
     accent-color: var(--marca);
   }
+  /* Controles nativos (listas desplegables, calendario) con el esquema del tema: sin esto, en modo oscuro
+     la lista de opciones sale con fondo blanco y texto claro, ilegible */
+  :root {
+    color-scheme: light;
+  }
+  .dark {
+    color-scheme: dark;
+  }
+  select option,
+  select optgroup {
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+  }
+  select option:checked {
+    background-color: var(--marca-claro);
+    color: var(--marca-oscuro);
+  }
+  select option:disabled {
+    color: var(--muted-foreground);
+  }
   * {
     @apply border-border outline-ring/50;
     }

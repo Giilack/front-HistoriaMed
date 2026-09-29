@@ -17,11 +17,7 @@ import {
 } from "lucide-react"
 
 import { Alerta, Campo, Input, Select } from "@/components/form"
-import {
-  AvatarIniciales,
-  EncabezadoPagina,
-  SeccionTarjeta,
-} from "@/components/pagina"
+import { EncabezadoPagina, SeccionTarjeta } from "@/components/pagina"
 import { ListaAlertas, PrioridadEtiqueta } from "@/components/PrioridadEtiqueta"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -241,12 +237,7 @@ export function FormularioTriaje({
       <EncabezadoPagina
         alVolver={alCancelar}
         textoVolver="Volver a la cola"
-        titulo={
-          <span className="flex items-center gap-3">
-            <AvatarIniciales nombre={p.nombreCompleto} className="size-10" />
-            {p.nombreCompleto}
-          </span>
-        }
+        titulo={p.nombreCompleto}
         descripcion={
           <>
             <span className="font-mono">{p.numeroHc}</span> · {p.edad} ·{" "}

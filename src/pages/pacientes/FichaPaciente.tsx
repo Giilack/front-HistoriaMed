@@ -20,11 +20,7 @@ import { useAuth } from "@/auth/AuthContext"
 import { useConfirmacion } from "@/components/Confirmacion"
 import { EstadoCitaEtiqueta } from "@/components/EstadoCitaEtiqueta"
 import { Alerta } from "@/components/form"
-import {
-  AvatarIniciales,
-  EncabezadoPagina,
-  EstadoVacio,
-} from "@/components/pagina"
+import { EncabezadoPagina, EstadoVacio } from "@/components/pagina"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -161,10 +157,6 @@ export function FichaPaciente({
       {/* Cabecera con los datos que identifican al paciente */}
       <Card>
         <CardContent className="flex flex-wrap items-center gap-4">
-          <AvatarIniciales
-            nombre={paciente.nombreCompleto}
-            className="size-14 text-lg"
-          />
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-xl font-semibold tracking-tight">
               {paciente.nombreCompleto}

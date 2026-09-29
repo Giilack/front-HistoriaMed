@@ -2,7 +2,6 @@ import * as React from "react"
 import { Search } from "lucide-react"
 
 import { Input } from "@/components/form"
-import { AvatarIniciales } from "@/components/pagina"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { Pagina, PacienteResumen } from "@/lib/types"
@@ -26,10 +25,6 @@ export function BuscadorPaciente({
   if (seleccionado) {
     return (
       <div className="flex items-center gap-3 rounded-lg border border-marca/30 bg-marca-claro/50 px-3 py-2 dark:bg-muted">
-        <AvatarIniciales
-          nombre={seleccionado.nombreCompleto}
-          className="size-8 bg-card"
-        />
         <span className="min-w-0 flex-1 text-sm">
           <b className="block truncate">{seleccionado.nombreCompleto}</b>
           <span className="text-xs text-muted-foreground">
@@ -102,7 +97,6 @@ function Resultados({
             className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-marca-claro/50 focus-visible:bg-marca-claro/50 focus-visible:outline-none dark:hover:bg-muted"
             onClick={() => alElegir(p)}
           >
-            <AvatarIniciales nombre={p.nombreCompleto} className="size-8" />
             <span className="min-w-0 flex-1">
               <b className="block truncate font-medium">{p.nombreCompleto}</b>
               <span className="text-xs text-muted-foreground">

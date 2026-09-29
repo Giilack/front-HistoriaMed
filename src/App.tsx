@@ -19,7 +19,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { formatearFecha, hoyISO } from "@/lib/fechas"
 import { MENU, TITULO_VISTA, type Vista } from "@/lib/navegacion"
 import { AuditoriaPage } from "@/pages/AuditoriaPage"
-import { CambiarPasswordPage } from "@/pages/CambiarPasswordPage"
+import {
+  CambiarPasswordPage,
+  DialogoCambiarPassword,
+} from "@/pages/CambiarPasswordPage"
 import { CitasPage } from "@/pages/citas/CitasPage"
 import { ColaPage } from "@/pages/citas/ColaPage"
 import { ConsultoriosPage } from "@/pages/ConsultoriosPage"
@@ -32,6 +35,7 @@ import { UsuariosPage } from "@/pages/UsuariosPage"
 export function App() {
   const { usuario, cargando } = useAuth()
   const [vista, setVista] = React.useState<Vista>("inicio")
+  const [cambiandoPassword, setCambiandoPassword] = React.useState(false)
 
   if (cargando) {
     return (
@@ -45,17 +49,24 @@ export function App() {
     )
   }
   if (!usuario) return <LoginPage />
-  if (usuario.debeCambiarPassword) return <CambiarPasswordPage obligatorio />
+  if (usuario.debeCambiarPassword) return <CambiarPasswordPage />
 
   // Si cambia el usuario (otro rol), no mostrar una vista que no le corresponde
-  const permitida =
-    vista === "cuenta" ||
-    MENU.some((m) => m.vista === vista && m.roles.includes(usuario.rol))
+  const permitida = MENU.some(
+    (m) => m.vista === vista && m.roles.includes(usuario.rol)
+  )
   const vistaActual: Vista = permitida ? vista : "inicio"
 
   return (
     <SidebarProvider>
-      <AppSidebar vista={vistaActual} alNavegar={setVista} />
+      <AppSidebar
+        vista={vistaActual}
+        alNavegar={setVista}
+        alCambiarPassword={() => setCambiandoPassword(true)}
+      />
+      {cambiandoPassword && (
+        <DialogoCambiarPassword alCerrar={() => setCambiandoPassword(false)} />
+      )}
       <SidebarInset>
         <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b bg-card/95 px-4 backdrop-blur">
           <SidebarTrigger className="-ml-1 text-muted-foreground" />
@@ -88,9 +99,6 @@ export function App() {
             {vistaActual === "usuarios" && <UsuariosPage />}
             {vistaActual === "reportes" && <ReportesPage />}
             {vistaActual === "auditoria" && <AuditoriaPage />}
-            {vistaActual === "cuenta" && (
-              <CambiarPasswordPage obligatorio={false} />
-            )}
           </div>
         </main>
       </SidebarInset>
