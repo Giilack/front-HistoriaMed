@@ -1,8 +1,27 @@
 import * as React from "react"
+import {
+  Activity,
+  CalendarRange,
+  CalendarX2,
+  ChartColumn,
+  ClipboardPlus,
+  Clock,
+  DoorOpen,
+  Hourglass,
+  ListChecks,
+  ShieldCheck,
+  Siren,
+  Stethoscope,
+  Timer,
+  UserPlus,
+  UserRoundX,
+  type LucideIcon,
+} from "lucide-react"
 
 import { Alerta, Input } from "@/components/form"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { EncabezadoPagina, SeccionTarjeta } from "@/components/pagina"
+import { Card, CardContent } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { fechaLocal, formatearFecha, hoyISO } from "@/lib/fechas"
 import {
   NOMBRE_ESTADO_CITA,
@@ -15,6 +34,7 @@ import {
   type TipoFinanciamiento,
 } from "@/lib/types"
 import { useApi } from "@/lib/useApi"
+import { cn } from "@/lib/utils"
 
 /** Fecha ISO de hace `dias` días. */
 function haceDias(dias: number) {
@@ -41,129 +61,161 @@ export function ReportesPage() {
   )
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">Reportes</h1>
+    <div className="flex flex-col gap-6">
+      <EncabezadoPagina
+        titulo="Reportes"
+        descripcion={
+          <span className="inline-flex items-center gap-1.5">
+            <ShieldCheck className="size-4 text-marca" aria-hidden />
+            Cifras agregadas del establecimiento; no identifican a ningún
+            paciente.
+          </span>
+        }
+      />
 
       {/* Filtros: una sola fila, arriba de todo */}
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        {PERIODOS.map((p) => {
-          const activo = desde === haceDias(p.dias) && hasta === hoyISO()
-          return (
-            <Button
-              key={p.dias}
-              size="sm"
-              variant={activo ? "secondary" : "ghost"}
-              onClick={() => {
-                setDesde(haceDias(p.dias))
-                setHasta(hoyISO())
-              }}
-            >
-              {activo && "✓ "}
-              {p.etiqueta}
-            </Button>
-          )
-        })}
-        <span className="ml-2 text-muted-foreground">Desde</span>
-        <Input
-          type="date"
-          className="w-40"
-          value={desde}
-          max={hasta}
-          onChange={(e) => e.target.value && setDesde(e.target.value)}
+      <Card className="flex-row flex-wrap items-center gap-3 px-4 py-3 text-sm">
+        <div
+          className="inline-flex rounded-lg bg-muted p-1"
+          role="group"
+          aria-label="Período rápido"
+        >
+          {PERIODOS.map((p) => {
+            const activo = desde === haceDias(p.dias) && hasta === hoyISO()
+            return (
+              <button
+                key={p.dias}
+                type="button"
+                aria-pressed={activo}
+                className={cn(
+                  "rounded-md px-3 py-1.5 text-sm font-medium transition",
+                  activo
+                    ? "bg-card text-marca-oscuro shadow-xs dark:text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                onClick={() => {
+                  setDesde(haceDias(p.dias))
+                  setHasta(hoyISO())
+                }}
+              >
+                {p.etiqueta}
+              </button>
+            )
+          })}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <CalendarRange className="size-4 text-muted-foreground" aria-hidden />
+          <Input
+            type="date"
+            className="w-40"
+            aria-label="Desde"
+            value={desde}
+            max={hasta}
+            onChange={(e) => e.target.value && setDesde(e.target.value)}
+          />
+          <span className="text-muted-foreground">a</span>
+          <Input
+            type="date"
+            className="w-40"
+            aria-label="Hasta"
+            value={hasta}
+            max={hoyISO()}
+            onChange={(e) => e.target.value && setHasta(e.target.value)}
+          />
+        </div>
+        {r && (
+          <span className="text-muted-foreground lg:ml-auto">
+            Del {formatearFecha(r.desde)} al {formatearFecha(r.hasta)}
+          </span>
+        )}
+      </Card>
+
+      {error && <Alerta>{error}</Alerta>}
+
+      {/* KPI */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Indicador
+          icono={Stethoscope}
+          titulo="Atenciones"
+          valor={r?.totales.atendidas}
+          detalle={r && `de ${r.totales.citas} citas`}
         />
-        <span className="text-muted-foreground">hasta</span>
-        <Input
-          type="date"
-          className="w-40"
-          value={hasta}
-          max={hoyISO()}
-          onChange={(e) => e.target.value && setHasta(e.target.value)}
+        <Indicador
+          icono={UserRoundX}
+          titulo="Inasistencia"
+          valor={
+            r &&
+            (r.totales.tasaInasistencia === null
+              ? "—"
+              : `${r.totales.tasaInasistencia} %`)
+          }
+          detalle={r && `${r.totales.noSePresento} no se presentaron`}
+        />
+        <Indicador
+          icono={UserPlus}
+          titulo="Pacientes nuevos"
+          valor={r?.totales.pacientesNuevos}
+          detalle="registrados en el período"
+        />
+        <Indicador
+          icono={CalendarX2}
+          titulo="Cancelaciones"
+          valor={r?.totales.canceladas}
+          detalle="citas canceladas"
+        />
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Indicador
+          icono={Hourglass}
+          titulo="Espera hasta triaje"
+          valor={r && minutos(r.tiemposEspera.llegadaATriaje)}
+          detalle="promedio desde la llegada"
+        />
+        <Indicador
+          icono={Clock}
+          titulo="Espera hasta consulta"
+          valor={r && minutos(r.tiemposEspera.triajeAConsulta)}
+          detalle="promedio desde el triaje"
+        />
+        <Indicador
+          icono={Timer}
+          titulo="Duración de la consulta"
+          valor={r && minutos(r.tiemposEspera.duracionConsulta)}
+          detalle="promedio"
         />
       </div>
 
-      {error && <Alerta>{error}</Alerta>}
-      {!r && !error && <p className="text-muted-foreground">Cargando…</p>}
+      {!r && !error && <Skeleton className="h-64 rounded-xl" />}
 
       {r && (
         <>
-          <p className="text-sm text-muted-foreground">
-            Del {formatearFecha(r.desde)} al {formatearFecha(r.hasta)}. Cifras
-            agregadas; no identifican a ningún paciente.
-          </p>
-
-          {/* KPI */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Indicador
-              titulo="Atenciones"
-              valor={r.totales.atendidas}
-              detalle={`de ${r.totales.citas} citas`}
+          <SeccionTarjeta icono={ChartColumn} titulo="Atenciones por día">
+            <ColumnasPorDia
+              desde={r.desde}
+              hasta={r.hasta}
+              datos={r.atencionesPorDia}
             />
-            <Indicador
-              titulo="Inasistencia"
-              valor={
-                r.totales.tasaInasistencia === null
-                  ? "—"
-                  : `${r.totales.tasaInasistencia} %`
-              }
-              detalle={`${r.totales.noSePresento} no se presentaron`}
-            />
-            <Indicador
-              titulo="Pacientes nuevos"
-              valor={r.totales.pacientesNuevos}
-              detalle="registrados en el período"
-            />
-            <Indicador
-              titulo="Cancelaciones"
-              valor={r.totales.canceladas}
-              detalle="citas canceladas"
-            />
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Indicador
-              titulo="Espera hasta triaje"
-              valor={minutos(r.tiemposEspera.llegadaATriaje)}
-              detalle="desde la llegada"
-            />
-            <Indicador
-              titulo="Espera hasta consulta"
-              valor={minutos(r.tiemposEspera.triajeAConsulta)}
-              detalle="desde el triaje"
-            />
-            <Indicador
-              titulo="Duración de la consulta"
-              valor={minutos(r.tiemposEspera.duracionConsulta)}
-              detalle="promedio"
-            />
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Atenciones por día</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ColumnasPorDia
-                desde={r.desde}
-                hasta={r.hasta}
-                datos={r.atencionesPorDia}
-              />
-            </CardContent>
-          </Card>
+          </SeccionTarjeta>
 
           <div className="grid gap-4 lg:grid-cols-2">
             <Barras
+              icono={ClipboardPlus}
               titulo="Diagnósticos principales más frecuentes"
               datos={r.diagnosticosFrecuentes}
               conCodigo
             />
             <Barras
+              icono={Stethoscope}
               titulo="Atenciones por médico"
               datos={r.atencionesPorMedico}
             />
             <Barras
+              icono={DoorOpen}
               titulo="Atenciones por consultorio"
               datos={r.atencionesPorConsultorio}
             />
             <Barras
+              icono={ShieldCheck}
               titulo="Pacientes atendidos por financiamiento"
               datos={r.pacientesPorFinanciamiento.map((c) => ({
                 ...c,
@@ -173,6 +225,7 @@ export function ReportesPage() {
               }))}
             />
             <Barras
+              icono={Siren}
               titulo="Prioridad asignada en triaje"
               datos={r.prioridades.map((c) => ({
                 ...c,
@@ -180,6 +233,7 @@ export function ReportesPage() {
               }))}
             />
             <Barras
+              icono={ListChecks}
               titulo="Citas por estado"
               datos={r.citasPorEstado.map((c) => ({
                 ...c,
@@ -198,22 +252,37 @@ function minutos(valor: number | null) {
   return valor === null ? "—" : `${Math.round(valor)} min`
 }
 
-/** Tarjeta de indicador: el número es el protagonista. */
+/** Tarjeta de indicador: el número es el protagonista; `valor` indefinido = cargando. */
 function Indicador({
+  icono: Icono,
   titulo,
   valor,
   detalle,
 }: {
+  icono: LucideIcon
   titulo: string
-  valor: React.ReactNode
-  detalle: string
+  valor: React.ReactNode | undefined
+  detalle?: string | null
 }) {
   return (
-    <Card size="sm">
-      <CardContent className="flex flex-col gap-1">
-        <span className="text-sm text-muted-foreground">{titulo}</span>
-        <span className="text-3xl font-semibold">{valor}</span>
-        <span className="text-xs text-muted-foreground">{detalle}</span>
+    <Card>
+      <CardContent className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-col gap-1">
+          <span className="text-sm text-muted-foreground">{titulo}</span>
+          {valor === undefined ? (
+            <Skeleton className="h-9 w-16" />
+          ) : (
+            <span className="text-3xl font-semibold tracking-tight tabular-nums">
+              {valor}
+            </span>
+          )}
+          {detalle && (
+            <span className="text-xs text-muted-foreground">{detalle}</span>
+          )}
+        </div>
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-marca-claro text-marca dark:bg-muted">
+          <Icono className="size-5" aria-hidden />
+        </span>
       </CardContent>
     </Card>
   )
@@ -224,53 +293,51 @@ function Indicador({
  * valor escritos, así que se lee como tabla y no depende del color.
  */
 function Barras({
+  icono,
   titulo,
   datos,
   conCodigo = false,
 }: {
+  icono: LucideIcon
   titulo: string
   datos: Conteo[]
   conCodigo?: boolean
 }) {
   const maximo = Math.max(1, ...datos.map((d) => d.total))
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{titulo}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {datos.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Sin datos en el período.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-2 text-sm">
-            {datos.map((d) => (
-              <li
-                key={d.codigo}
-                className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-center gap-3"
-              >
-                <span className="truncate" title={d.etiqueta}>
-                  {conCodigo && (
-                    <span className="font-mono text-muted-foreground">
-                      {d.codigo}{" "}
-                    </span>
-                  )}
-                  {d.etiqueta}
-                </span>
-                <span className="flex items-center gap-2">
-                  <span
-                    className="h-3 rounded-r-[4px] bg-[var(--viz-serie)]"
-                    style={{ width: `${(d.total / maximo) * 85}%` }}
-                  />
-                  <span className="tabular-nums">{d.total}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
+    <SeccionTarjeta icono={icono} titulo={titulo}>
+      {datos.length === 0 ? (
+        <p className="flex items-center gap-2 rounded-lg border border-dashed px-3 py-2 text-sm text-muted-foreground">
+          <Activity className="size-4" aria-hidden />
+          Sin datos en el período.
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-2 text-sm">
+          {datos.map((d) => (
+            <li
+              key={d.codigo}
+              className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-center gap-3"
+            >
+              <span className="truncate" title={d.etiqueta}>
+                {conCodigo && (
+                  <span className="font-mono text-muted-foreground">
+                    {d.codigo}{" "}
+                  </span>
+                )}
+                {d.etiqueta}
+              </span>
+              <span className="flex items-center gap-2">
+                <span
+                  className="h-3 min-w-0.5 rounded-r-[4px] bg-[var(--viz-serie)]"
+                  style={{ width: `${(d.total / maximo) * 85}%` }}
+                />
+                <span className="font-medium tabular-nums">{d.total}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </SeccionTarjeta>
   )
 }
 
@@ -303,7 +370,8 @@ function ColumnasPorDia({
 
   if (total === 0)
     return (
-      <p className="text-sm text-muted-foreground">
+      <p className="flex items-center gap-2 rounded-lg border border-dashed px-3 py-2 text-sm text-muted-foreground">
+        <Activity className="size-4" aria-hidden />
         Sin atenciones en el período.
       </p>
     )

@@ -1,9 +1,22 @@
 import * as React from "react"
+import { CalendarRange, RefreshCw, ScrollText, Search } from "lucide-react"
 
 import { Alerta, Input, Select } from "@/components/form"
+import { EncabezadoPagina, EstadoVacio, Paginacion } from "@/components/pagina"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import type { Pagina, RegistroAuditoria } from "@/lib/types"
 import { useApi } from "@/lib/useApi"
+import { cn } from "@/lib/utils"
 
 const ACCIONES = [
   "LOGIN_EXITOSO",
@@ -28,6 +41,17 @@ const ALERTAS = new Set([
   "CUENTA_BLOQUEADA",
   "REFRESH_REUTILIZADO",
 ])
+
+// Accesos y sesiones (no son alertas)
+const SESION = new Set(["LOGIN_EXITOSO", "LOGOUT", "CAMBIO_PASSWORD"])
+
+function estiloAccion(accion: string) {
+  if (ALERTAS.has(accion)) return "bg-destructive/12 text-destructive"
+  if (SESION.has(accion))
+    return "bg-marca-claro text-marca-oscuro dark:bg-muted dark:text-foreground"
+  if (accion === "VER") return "bg-muted text-muted-foreground"
+  return "bg-green-600/12 text-green-700 dark:text-green-400"
+}
 
 const formatoFecha = new Intl.DateTimeFormat("es-PE", {
   dateStyle: "short",
@@ -67,133 +91,160 @@ export function AuditoriaPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Auditoría</h1>
-        <Button variant="outline" onClick={recargar}>
-          Actualizar
-        </Button>
-      </div>
+    <div className="flex flex-col gap-6">
+      <EncabezadoPagina
+        titulo="Auditoría"
+        descripcion="Registro inalterable de accesos y operaciones. Las alertas de seguridad se muestran en rojo."
+        acciones={
+          <Button variant="outline" onClick={recargar}>
+            <RefreshCw />
+            Actualizar
+          </Button>
+        }
+      />
 
       {error && <Alerta>{error}</Alerta>}
 
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <Input
-          placeholder="Usuario exacto"
-          className="w-40"
-          value={username}
-          onChange={(e) => filtro(setUsername)(e.target.value)}
-        />
-        <Select
-          className="w-52"
-          value={accion}
-          onChange={(e) => filtro(setAccion)(e.target.value)}
-        >
-          <option value="">Todas las acciones</option>
-          {ACCIONES.map((a) => (
-            <option key={a} value={a}>
-              {a}
-            </option>
-          ))}
-        </Select>
-        <span>Desde</span>
-        <Input
-          type="date"
-          className="w-40"
-          value={desde}
-          onChange={(e) => filtro(setDesde)(e.target.value)}
-        />
-        <span>Hasta</span>
-        <Input
-          type="date"
-          className="w-40"
-          value={hasta}
-          onChange={(e) => filtro(setHasta)(e.target.value)}
-        />
-      </div>
-
-      <div className="overflow-x-auto rounded-md border">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-left">
-            <tr>
-              <th className="px-3 py-2 font-medium">Fecha</th>
-              <th className="px-3 py-2 font-medium">Usuario</th>
-              <th className="px-3 py-2 font-medium">Acción</th>
-              <th className="px-3 py-2 font-medium">Recurso</th>
-              <th className="px-3 py-2 font-medium">Detalle</th>
-              <th className="px-3 py-2 font-medium">IP</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pagina?.contenido.map((r) => (
-              <tr key={r.id} className="border-t">
-                <td className="px-3 py-2 whitespace-nowrap">
-                  {formatoFecha.format(new Date(r.fecha))}
-                </td>
-                <td className="px-3 py-2">
-                  <span className="font-mono">{r.username ?? "—"}</span>
-                  {r.rol && (
-                    <span className="text-muted-foreground"> · {r.rol}</span>
-                  )}
-                </td>
-                <td
-                  className={`px-3 py-2 font-medium ${ALERTAS.has(r.accion) ? "text-destructive" : ""}`}
-                >
-                  {r.accion}
-                </td>
-                <td className="px-3 py-2">
-                  {r.recurso}
-                  {r.recursoId && (
-                    <span className="text-muted-foreground">
-                      {" "}
-                      #{r.recursoId}
-                    </span>
-                  )}
-                </td>
-                <td className="px-3 py-2 text-muted-foreground">
-                  {r.detalle ?? ""}
-                </td>
-                <td className="px-3 py-2 font-mono text-xs">{r.ip ?? ""}</td>
-              </tr>
+      <Card className="gap-0 py-0">
+        <div className="flex flex-wrap items-center gap-2 border-b p-4 text-sm">
+          <div className="relative w-44">
+            <Search
+              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
+            />
+            <Input
+              placeholder="Usuario exacto"
+              aria-label="Usuario"
+              className="pl-9"
+              value={username}
+              onChange={(e) => filtro(setUsername)(e.target.value)}
+            />
+          </div>
+          <Select
+            className="w-56"
+            aria-label="Acción"
+            value={accion}
+            onChange={(e) => filtro(setAccion)(e.target.value)}
+          >
+            <option value="">Todas las acciones</option>
+            {ACCIONES.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
             ))}
-            {pagina?.contenido.length === 0 && (
-              <tr>
-                <td
-                  colSpan={6}
-                  className="px-3 py-6 text-center text-muted-foreground"
-                >
-                  No hay registros con esos filtros.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {pagina && pagina.totalPaginas > 1 && (
-        <div className="flex items-center gap-2 text-sm">
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={numPagina === 0}
-            onClick={() => setNumPagina((p) => p - 1)}
-          >
-            Anterior
-          </Button>
-          <span>
-            Página {pagina.pagina + 1} de {pagina.totalPaginas} (
-            {pagina.totalElementos} registros)
-          </span>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={numPagina + 1 >= pagina.totalPaginas}
-            onClick={() => setNumPagina((p) => p + 1)}
-          >
-            Siguiente
-          </Button>
+          </Select>
+          <div className="flex flex-wrap items-center gap-2">
+            <CalendarRange
+              className="size-4 text-muted-foreground"
+              aria-hidden
+            />
+            <Input
+              type="date"
+              className="w-40"
+              aria-label="Desde"
+              value={desde}
+              onChange={(e) => filtro(setDesde)(e.target.value)}
+            />
+            <span className="text-muted-foreground">a</span>
+            <Input
+              type="date"
+              className="w-40"
+              aria-label="Hasta"
+              value={hasta}
+              onChange={(e) => filtro(setHasta)(e.target.value)}
+            />
+          </div>
         </div>
-      )}
+
+        {pagina?.contenido.length === 0 ? (
+          <EstadoVacio
+            icono={ScrollText}
+            titulo="No hay registros con esos filtros"
+            descripcion="Amplíe el rango de fechas o quite algún filtro."
+          />
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/40 hover:bg-muted/40">
+                <TableHead className="pl-4">Fecha</TableHead>
+                <TableHead>Usuario</TableHead>
+                <TableHead>Acción</TableHead>
+                <TableHead>Recurso</TableHead>
+                <TableHead>Detalle</TableHead>
+                <TableHead className="pr-4">IP</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {!pagina
+                ? [0, 1, 2, 3, 4, 5].map((i) => (
+                    <TableRow key={i}>
+                      <TableCell colSpan={6} className="px-4">
+                        <Skeleton className="h-6 w-full" />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                : pagina.contenido.map((r) => (
+                    <TableRow
+                      key={r.id}
+                      className={cn(
+                        ALERTAS.has(r.accion) &&
+                          "bg-destructive/5 hover:bg-destructive/10"
+                      )}
+                    >
+                      <TableCell className="pl-4 whitespace-nowrap text-muted-foreground tabular-nums">
+                        {formatoFecha.format(new Date(r.fecha))}
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-mono">{r.username ?? "—"}</span>
+                        {r.rol && (
+                          <span className="block text-xs text-muted-foreground">
+                            {r.rol}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={cn(
+                            "inline-flex rounded-full px-2 py-0.5 font-mono text-[11px] font-medium whitespace-nowrap",
+                            estiloAccion(r.accion)
+                          )}
+                        >
+                          {r.accion}
+                        </span>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {r.recurso}
+                        {r.recursoId && (
+                          <span className="text-muted-foreground">
+                            {" "}
+                            #{r.recursoId}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="max-w-72 truncate whitespace-nowrap text-muted-foreground">
+                        <span title={r.detalle ?? undefined}>
+                          {r.detalle ?? ""}
+                        </span>
+                      </TableCell>
+                      <TableCell className="pr-4 font-mono text-xs text-muted-foreground">
+                        {r.ip ?? ""}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+            </TableBody>
+          </Table>
+        )}
+
+        {pagina && (
+          <Paginacion
+            pagina={pagina.pagina}
+            totalPaginas={pagina.totalPaginas}
+            totalElementos={pagina.totalElementos}
+            unidad="registros"
+            alCambiar={setNumPagina}
+          />
+        )}
+      </Card>
     </div>
   )
 }
