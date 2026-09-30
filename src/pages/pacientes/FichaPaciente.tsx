@@ -56,6 +56,8 @@ import { useApi } from "@/lib/useApi"
 import { cn } from "@/lib/utils"
 import { HistoriaClinica } from "@/pages/atencion/HistoriaClinica"
 import { PanelDocumentos } from "@/pages/documentos/PanelDocumentos"
+import { PanelAntecedentes } from "@/pages/extraccion/PanelAntecedentes"
+import { PanelLaboratorio } from "@/pages/extraccion/PanelLaboratorio"
 import { PanelAlergias } from "@/pages/triaje/PanelAlergias"
 import { TriajeResumen } from "@/pages/triaje/TriajeResumen"
 
@@ -156,7 +158,7 @@ export function FichaPaciente({
 
       {/* Cabecera con los datos que identifican al paciente */}
       <Card>
-        <CardContent className="flex flex-wrap items-center gap-4">
+        <CardContent className="flex flex-row flex-wrap items-center gap-4">
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-xl font-semibold tracking-tight">
               {paciente.nombreCompleto}
@@ -210,14 +212,14 @@ export function FichaPaciente({
         <Tabs defaultValue="datos">
           <TabsList
             variant="line"
-            className="w-full justify-start gap-2 overflow-x-auto border-b pb-0"
+            className="w-full justify-start gap-2 overflow-x-auto overflow-y-hidden border-b pb-0"
           >
             <Pestana valor="datos" icono={UserRound} texto="Datos" />
             {veDatosClinicos && (
               <Pestana
                 valor="clinico"
                 icono={HeartPulse}
-                texto="Alergias y triajes"
+                texto="Resumen clínico"
               />
             )}
             {esMedico && (
@@ -374,6 +376,29 @@ export function FichaPaciente({
                   </CardContent>
                 </Card>
                 <HistorialTriajes pacienteId={paciente.id} />
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Antecedentes</CardTitle>
+                    <CardDescription>
+                      Personales, familiares, quirúrgicos, diagnósticos previos
+                      y medicación habitual
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <PanelAntecedentes pacienteId={paciente.id} />
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Resultados de laboratorio</CardTitle>
+                    <CardDescription>
+                      Validados por un médico a partir de los documentos
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <PanelLaboratorio pacienteId={paciente.id} />
+                  </CardContent>
+                </Card>
               </div>
             </TabsContent>
           )}

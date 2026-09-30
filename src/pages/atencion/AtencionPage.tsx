@@ -4,6 +4,8 @@ import {
   Activity,
   ClipboardPlus,
   FileText,
+  FlaskConical,
+  History,
   NotebookPen,
   Pill,
   Save,
@@ -35,6 +37,8 @@ import {
 import { useApi } from "@/lib/useApi"
 import { cn } from "@/lib/utils"
 import { PanelDocumentos } from "@/pages/documentos/PanelDocumentos"
+import { PanelAntecedentes } from "@/pages/extraccion/PanelAntecedentes"
+import { PanelLaboratorio } from "@/pages/extraccion/PanelLaboratorio"
 import { PanelAlergias } from "@/pages/triaje/PanelAlergias"
 import { TriajeResumen } from "@/pages/triaje/TriajeResumen"
 
@@ -203,6 +207,12 @@ export function AtencionPage({
           <TriajeDeLaCita citaId={atencion.citaId} />
           <SeccionTarjeta icono={ShieldAlert} titulo="Alergias">
             <PanelAlergias pacienteId={p.id} />
+          </SeccionTarjeta>
+          <SeccionTarjeta icono={History} titulo="Antecedentes">
+            <PanelAntecedentes pacienteId={p.id} />
+          </SeccionTarjeta>
+          <SeccionTarjeta icono={FlaskConical} titulo="Laboratorio">
+            <PanelLaboratorio pacienteId={p.id} />
           </SeccionTarjeta>
           <SeccionTarjeta icono={FileText} titulo="Documentos">
             <PanelDocumentos pacienteId={p.id} citaId={atencion.citaId} />

@@ -33,6 +33,7 @@ const ACCIONES = [
   "RESETEAR_PASSWORD",
   "CERRAR",
   "DESCARGAR",
+  "VALIDAR",
 ]
 
 // Acciones que merecen atención del administrador
