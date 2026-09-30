@@ -1,3 +1,6 @@
+// Primero: configura zod antes de que se cargue cualquier módulo con esquemas
+import "@/lib/configurarZod"
+
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 
