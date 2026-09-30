@@ -183,20 +183,31 @@
     @apply font-sans;
     }
 }
-/* Impresión de la receta: solo se imprime el bloque .zona-impresion (ver AtencionDetalle) */
+/* Documentos impresos (receta, órdenes, descanso médico): se dibujan en un bloque .zona-impresion que es hijo
+   directo de <body> (ver Imprimible en AtencionDetalle). En pantalla no se ve; al imprimir es lo único que sale,
+   en negro sobre blanco aunque el sistema esté en modo oscuro. */
+.zona-impresion {
+  display: none;
+}
 @media print {
-  body * {
-    visibility: hidden;
+  html,
+  body {
+    background: white !important;
   }
-  .zona-impresion,
-  .zona-impresion * {
-    visibility: visible;
+  body > *:not(.zona-impresion) {
+    display: none !important;
   }
   .zona-impresion {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
+    display: block;
+    padding: 1.5cm;
+    font-size: 12pt;
+    line-height: 1.5;
     color: black;
+  }
+  .zona-impresion * {
+    color: black !important;
+  }
+  .zona-impresion hr {
+    border-color: #999 !important;
   }
 }

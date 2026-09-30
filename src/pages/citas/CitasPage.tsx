@@ -1,5 +1,6 @@
 import * as React from "react"
 import {
+  CalendarClock,
   CalendarPlus,
   CalendarX2,
   ChevronLeft,
@@ -46,6 +47,7 @@ import {
   NOMBRE_ESTADO_CITA,
   type Cita,
   type Consultorio,
+  type ControlPendiente,
   type EstadoCita,
   type Medico,
 } from "@/lib/types"
@@ -83,6 +85,10 @@ export function CitasPage() {
 
   const { datos: medicos } = useApi<Medico[]>("/api/usuarios/medicos")
   const { datos: consultorios } = useApi<Consultorio[]>("/api/consultorios")
+  // Controles que los médicos sugirieron y todavía no tienen cita
+  const { datos: controles, recargar: recargarControles } = useApi<
+    ControlPendiente[]
+  >("/api/controles-pendientes")
 
   const params = new URLSearchParams({ fecha })
   if (consultorioId) params.set("consultorioId", consultorioId)
@@ -176,7 +182,9 @@ export function CitasPage() {
           key={
             formulario.tipo === "reprogramar"
               ? formulario.cita.id
-              : formulario.tipo
+              : formulario.tipo === "control"
+                ? `control-${formulario.control.atencionId}`
+                : formulario.tipo
           }
           modo={formulario}
           medicos={medicos}
@@ -185,6 +193,7 @@ export function CitasPage() {
           alGuardar={(c) => {
             setFormulario(null)
             setErrorAccion(null)
+            recargarControles()
             if (c.numeroTurno) {
               toast.success(
                 `${c.paciente.nombreCompleto} pasó a la cola de triaje`,
@@ -204,6 +213,54 @@ export function CitasPage() {
       )}
 
       {error && <Alerta>{error}</Alerta>}
+
+      {controles && controles.length > 0 && (
+        <Card className="gap-0 border-l-4 border-l-marca py-0">
+          <div className="flex items-center gap-2 border-b px-4 py-3">
+            <CalendarClock className="size-4 text-marca" aria-hidden />
+            <h2 className="text-sm font-semibold">
+              Controles por programar ({controles.length})
+            </h2>
+            <span className="text-xs text-muted-foreground">
+              Sugeridos por el médico al cerrar la atención
+            </span>
+          </div>
+          <ul className="divide-y">
+            {controles.map((c) => (
+              <li
+                key={c.atencionId}
+                className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2.5 text-sm"
+              >
+                <div className="min-w-0 flex-1">
+                  <span className="font-medium">{c.paciente}</span>{" "}
+                  <span className="font-mono text-xs text-muted-foreground">
+                    {c.numeroHc}
+                  </span>
+                  <span className="block text-xs text-muted-foreground">
+                    {c.medico} · {c.consultorio}
+                  </span>
+                </div>
+                <span className="flex items-center gap-2 whitespace-nowrap">
+                  {formatearFecha(c.fechaSugerida)}
+                  {c.vencido && (
+                    <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-800 dark:text-amber-400">
+                      Fecha pasada
+                    </span>
+                  )}
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setFormulario({ tipo: "control", control: c })}
+                >
+                  <CalendarPlus />
+                  Programar
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       <Card className="gap-0 py-0">
         {/* Barra de filtros */}
