@@ -13,9 +13,12 @@ import {
   Signature,
   Stethoscope,
   TriangleAlert,
+  CalendarCheck,
+  ListChecks,
+  Plus,
   X,
 } from "lucide-react"
-import { useFieldArray, useForm } from "react-hook-form"
+import { useFieldArray, useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
 
@@ -26,11 +29,16 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ApiError, api, json } from "@/lib/api"
+import { fechaLocal, hoyISO } from "@/lib/fechas"
 import {
+  CATEGORIAS_PLAN,
+  NOMBRE_CATEGORIA_PLAN,
   NOMBRE_VIA,
   type Atencion,
+  type CategoriaPlan,
   type Cie10,
   type MedicamentoCatalogo,
+  type TipoPlan,
   type Triaje,
   type ViaAdministracion,
 } from "@/lib/types"
@@ -49,42 +57,128 @@ import { HistoriaClinica } from "./HistoriaClinica"
 const texto = (max: number) =>
   z.string().trim().max(max, `máximo ${max} caracteres`)
 
-const esquema = z.object({
-  motivoConsulta: texto(500).min(1, "obligatorio"),
-  tiempoEnfermedad: texto(60),
-  anamnesis: texto(4000),
-  examenFisico: texto(4000),
-  planTrabajo: texto(2000),
-  indicaciones: texto(2000),
-  diagnosticos: z.array(
-    z.object({
-      codigo: z.string(),
-      descripcion: z.string(),
-      tipo: z.enum(["PRESUNTIVO", "DEFINITIVO"]),
-      principal: z.boolean(),
+/** Textos de cada tipo de indicación del plan. */
+const PLAN: Record<
+  TipoPlan,
+  { nombre: string; agregar: string; descripcion: string; detalle: string }
+> = {
+  TRATAMIENTO: {
+    nombre: "Indicación",
+    agregar: "Indicación",
+    descripcion: "ej. Reposo relativo por 48 horas",
+    detalle: "Nota (opcional)",
+  },
+  EXAMEN: {
+    nombre: "Examen",
+    agregar: "Examen",
+    descripcion: "ej. Hemograma completo",
+    detalle: "Nota (opcional): en ayunas…",
+  },
+  INTERCONSULTA: {
+    nombre: "Interconsulta",
+    agregar: "Interconsulta",
+    descripcion: "Especialidad: ej. Cardiología",
+    detalle: "Motivo de la interconsulta",
+  },
+}
+
+/** Fecha ISO de mañana: el control se sugiere a partir del día siguiente a la atención. */
+function mananaISO() {
+  const d = fechaLocal(hoyISO())
+  d.setDate(d.getDate() + 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+
+const esquema = z
+  .object({
+    motivoConsulta: texto(500).min(1, "obligatorio"),
+    tiempoEnfermedad: texto(60),
+    anamnesis: texto(4000),
+    examenFisico: texto(4000),
+    planTrabajo: texto(2000),
+    indicaciones: texto(2000),
+    diagnosticos: z.array(
+      z.object({
+        codigo: z.string(),
+        descripcion: z.string(),
+        tipo: z.enum(["PRESUNTIVO", "DEFINITIVO"]),
+        principal: z.boolean(),
+      })
+    ),
+    receta: z.array(
+      z.object({
+        medicamentoId: z.number(),
+        medicamento: z.string(),
+        dosis: texto(60).min(1, "obligatorio"),
+        via: z.string(),
+        frecuencia: texto(60).min(1, "obligatorio"),
+        duracion: texto(60).min(1, "obligatorio"),
+        cantidad: z
+          .string()
+          .trim()
+          .refine(
+            (v) => /^\d+$/.test(v) && Number(v) >= 1 && Number(v) <= 999,
+            "entre 1 y 999"
+          ),
+        indicaciones: texto(200),
+        confirmarAlergia: z.boolean(),
+        justificacionAlergia: texto(300),
+      })
+    ),
+    plan: z.array(
+      z.object({
+        tipo: z.enum(["TRATAMIENTO", "EXAMEN", "INTERCONSULTA"]),
+        categoria: z.string(),
+        descripcion: texto(200).min(1, "obligatorio"),
+        detalle: texto(300),
+      })
+    ),
+    conDescanso: z.boolean(),
+    descansoDias: z.string().trim(),
+    descansoDesde: z.string(),
+    conControl: z.boolean(),
+    controlFecha: z.string(),
+    controlNota: texto(200),
+  })
+  .superRefine((d, ctx) => {
+    d.plan.forEach((item, i) => {
+      if (item.tipo === "INTERCONSULTA" && !item.detalle)
+        ctx.addIssue({
+          code: "custom",
+          path: ["plan", i, "detalle"],
+          message: "indique el motivo",
+        })
     })
-  ),
-  receta: z.array(
-    z.object({
-      medicamentoId: z.number(),
-      medicamento: z.string(),
-      dosis: texto(60).min(1, "obligatorio"),
-      via: z.string(),
-      frecuencia: texto(60).min(1, "obligatorio"),
-      duracion: texto(60).min(1, "obligatorio"),
-      cantidad: z
-        .string()
-        .trim()
-        .refine(
-          (v) => /^\d+$/.test(v) && Number(v) >= 1 && Number(v) <= 999,
-          "entre 1 y 999"
-        ),
-      indicaciones: texto(200),
-      confirmarAlergia: z.boolean(),
-      justificacionAlergia: texto(300),
-    })
-  ),
-})
+    if (d.conDescanso) {
+      const dias = Number(d.descansoDias)
+      if (!/^\d+$/.test(d.descansoDias) || dias < 1 || dias > 30)
+        ctx.addIssue({
+          code: "custom",
+          path: ["descansoDias"],
+          message: "entre 1 y 30 días",
+        })
+      if (!d.descansoDesde)
+        ctx.addIssue({
+          code: "custom",
+          path: ["descansoDesde"],
+          message: "obligatorio",
+        })
+    }
+    if (d.conControl) {
+      if (!d.controlFecha)
+        ctx.addIssue({
+          code: "custom",
+          path: ["controlFecha"],
+          message: "indique la fecha",
+        })
+      else if (d.controlFecha <= hoyISO())
+        ctx.addIssue({
+          code: "custom",
+          path: ["controlFecha"],
+          message: "debe ser posterior a hoy",
+        })
+    }
+  })
 
 type Datos = z.infer<typeof esquema>
 
@@ -109,6 +203,18 @@ function desdeAtencion(a: Atencion): Datos {
       confirmarAlergia: r.alergiaConfirmada,
       justificacionAlergia: r.justificacionAlergia ?? "",
     })),
+    plan: a.plan.map((i) => ({
+      tipo: i.tipo,
+      categoria: i.categoria ?? "",
+      descripcion: i.descripcion,
+      detalle: i.detalle ?? "",
+    })),
+    conDescanso: !!a.descanso,
+    descansoDias: a.descanso ? String(a.descanso.dias) : "",
+    descansoDesde: a.descanso?.desde ?? hoyISO(),
+    conControl: !!a.control,
+    controlFecha: a.control?.fecha ?? "",
+    controlNota: a.control?.nota ?? "",
   }
 }
 
@@ -137,6 +243,18 @@ function aPayload(d: Datos) {
       confirmarAlergia: r.confirmarAlergia,
       justificacionAlergia: nulo(r.justificacionAlergia),
     })),
+    plan: d.plan.map((i) => ({
+      tipo: i.tipo,
+      categoria: i.tipo === "INTERCONSULTA" ? null : i.categoria,
+      descripcion: i.descripcion,
+      detalle: nulo(i.detalle),
+    })),
+    descanso: d.conDescanso
+      ? { dias: Number(d.descansoDias), desde: d.descansoDesde }
+      : null,
+    control: d.conControl
+      ? { fecha: d.controlFecha, nota: nulo(d.controlNota) }
+      : null,
   }
 }
 
@@ -261,6 +379,20 @@ function EditorAtencion({
   })
   const diagnosticos = useFieldArray({ control, name: "diagnosticos" })
   const receta = useFieldArray({ control, name: "receta" })
+  const plan = useFieldArray({ control, name: "plan" })
+  const [conDescanso, descansoDias, descansoDesde, conControl] = useWatch({
+    control,
+    name: ["conDescanso", "descansoDias", "descansoDesde", "conControl"],
+  })
+  // Último día del descanso (incluido), para mostrarlo mientras se escribe
+  const descansoHasta = React.useMemo(() => {
+    const dias = Number(descansoDias)
+    if (!descansoDesde || !Number.isInteger(dias) || dias < 1 || dias > 30)
+      return null
+    const d = fechaLocal(descansoDesde)
+    d.setDate(d.getDate() + dias - 1)
+    return d
+  }, [descansoDias, descansoDesde])
   const [error, setError] = React.useState<string | null>(null)
   // Alertas de alergia devueltas por el backend, por posición en la receta
   const [alertasAlergia, setAlertasAlergia] = React.useState<
@@ -544,9 +676,171 @@ function EditorAtencion({
         />
       </SeccionTarjeta>
 
-      <SeccionTarjeta icono={NotebookPen} titulo="Plan e indicaciones">
+      <SeccionTarjeta
+        icono={ListChecks}
+        titulo="Tratamiento y órdenes"
+        descripcion="Indicaciones no farmacológicas, exámenes que se solicitan e interconsultas."
+      >
+        {plan.fields.map((f, i) => {
+          const e = errors.plan?.[i]
+          const textos = PLAN[f.tipo]
+          return (
+            <div
+              key={f.id}
+              className="grid items-start gap-2 rounded-lg border bg-card p-3 sm:grid-cols-[9.5rem_1fr_1fr_auto]"
+            >
+              {f.tipo === "INTERCONSULTA" ? (
+                <Badge variant="secondary" className="mt-2 justify-self-start">
+                  Interconsulta
+                </Badge>
+              ) : (
+                <Select
+                  aria-label={`Clase de ${textos.nombre.toLowerCase()}`}
+                  {...register(`plan.${i}.categoria`)}
+                >
+                  {CATEGORIAS_PLAN[f.tipo].map((c: CategoriaPlan) => (
+                    <option key={c} value={c}>
+                      {NOMBRE_CATEGORIA_PLAN[c]}
+                    </option>
+                  ))}
+                </Select>
+              )}
+              <Campo label="" error={e?.descripcion?.message}>
+                <Input
+                  {...register(`plan.${i}.descripcion`)}
+                  aria-label={textos.nombre}
+                  placeholder={textos.descripcion}
+                />
+              </Campo>
+              <Campo label="" error={e?.detalle?.message}>
+                <Input
+                  {...register(`plan.${i}.detalle`)}
+                  aria-label={textos.detalle}
+                  placeholder={textos.detalle}
+                />
+              </Campo>
+              <Button
+                type="button"
+                size="icon-sm"
+                variant="ghost"
+                className="text-muted-foreground hover:text-destructive"
+                aria-label={`Quitar ${textos.nombre.toLowerCase()}`}
+                onClick={() => plan.remove(i)}
+              >
+                <X />
+              </Button>
+            </div>
+          )
+        })}
+        <div className="flex flex-wrap gap-2">
+          {(Object.keys(PLAN) as TipoPlan[]).map((tipo) => (
+            <Button
+              key={tipo}
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                plan.append({
+                  tipo,
+                  categoria: CATEGORIAS_PLAN[tipo][0] ?? "",
+                  descripcion: "",
+                  detalle: "",
+                })
+              }
+            >
+              <Plus />
+              {PLAN[tipo].agregar}
+            </Button>
+          ))}
+        </div>
+      </SeccionTarjeta>
+
+      <SeccionTarjeta icono={CalendarCheck} titulo="Descanso médico y control">
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="flex flex-col gap-3 rounded-lg border p-3 has-[input[type=checkbox]:checked]:border-marca">
+            <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                className="size-4"
+                {...register("conDescanso")}
+              />
+              Indicar descanso médico
+            </label>
+            {conDescanso && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <Campo label="Días" error={errors.descansoDias?.message}>
+                    <Input
+                      {...register("descansoDias")}
+                      inputMode="numeric"
+                      placeholder="1 a 30"
+                    />
+                  </Campo>
+                  <Campo label="Desde" error={errors.descansoDesde?.message}>
+                    <Input
+                      type="date"
+                      min={hoyISO()}
+                      {...register("descansoDesde")}
+                    />
+                  </Campo>
+                </div>
+                {descansoHasta && (
+                  <p className="text-xs text-muted-foreground">
+                    Hasta el{" "}
+                    {descansoHasta.toLocaleDateString("es-PE", {
+                      dateStyle: "full",
+                    })}{" "}
+                    inclusive. Se podrá imprimir al firmar la atención.
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-lg border p-3 has-[input[type=checkbox]:checked]:border-marca">
+            <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                className="size-4"
+                {...register("conControl")}
+              />
+              Sugerir cita de control
+            </label>
+            {conControl && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <Campo label="Fecha" error={errors.controlFecha?.message}>
+                    <Input
+                      type="date"
+                      min={mananaISO()}
+                      {...register("controlFecha")}
+                    />
+                  </Campo>
+                  <Campo
+                    label="Nota (opcional)"
+                    error={errors.controlNota?.message}
+                  >
+                    <Input
+                      {...register("controlNota")}
+                      placeholder="ej. traer resultados"
+                    />
+                  </Campo>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Admisión verá el control para programarlo (sin la nota).
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      </SeccionTarjeta>
+
+      <SeccionTarjeta
+        icono={NotebookPen}
+        titulo="Notas del plan e indicaciones"
+      >
         <Campo
-          label="Plan de trabajo (exámenes auxiliares, interconsultas, control)"
+          label="Plan de trabajo (notas adicionales)"
           error={errors.planTrabajo?.message}
         >
           <Textarea {...register("planTrabajo")} />

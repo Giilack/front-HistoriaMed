@@ -52,7 +52,7 @@ export function Campo({
 }) {
   return (
     <label className="flex flex-col gap-1.5 text-sm">
-      <span className="font-medium text-foreground">{label}</span>
+      {label && <span className="font-medium text-foreground">{label}</span>}
       {children}
       {error && (
         <span className="text-xs font-medium text-destructive">{error}</span>

@@ -362,7 +362,62 @@ export interface Atencion {
     alergiaConfirmada: boolean
     justificacionAlergia: string | null
   }[]
+  plan: ItemPlan[]
+  descanso: { dias: number; desde: string; hasta: string } | null
+  control: { fecha: string; nota: string | null } | null
   adendas: { id: number; autor: string; texto: string; creadoEn: string }[]
+}
+
+// --- Tratamiento estructurado (fase 9) ---
+
+export type TipoPlan = "TRATAMIENTO" | "EXAMEN" | "INTERCONSULTA"
+
+export type CategoriaPlan =
+  | "DIETA"
+  | "REPOSO"
+  | "FISIOTERAPIA"
+  | "CURACION"
+  | "LABORATORIO"
+  | "IMAGEN"
+  | "OTRO"
+
+/** Categorías que admite cada tipo de indicación (la interconsulta no lleva). */
+export const CATEGORIAS_PLAN: Record<TipoPlan, CategoriaPlan[]> = {
+  TRATAMIENTO: ["DIETA", "REPOSO", "FISIOTERAPIA", "CURACION", "OTRO"],
+  EXAMEN: ["LABORATORIO", "IMAGEN", "OTRO"],
+  INTERCONSULTA: [],
+}
+
+export const NOMBRE_CATEGORIA_PLAN: Record<CategoriaPlan, string> = {
+  DIETA: "Dieta",
+  REPOSO: "Reposo",
+  FISIOTERAPIA: "Fisioterapia",
+  CURACION: "Curación",
+  LABORATORIO: "Laboratorio",
+  IMAGEN: "Imagen",
+  OTRO: "Otro",
+}
+
+/** Indicación del plan que no es un medicamento. En la interconsulta, descripción = especialidad y detalle = motivo. */
+export interface ItemPlan {
+  tipo: TipoPlan
+  categoria: CategoriaPlan | null
+  descripcion: string
+  detalle: string | null
+}
+
+/** Control sugerido por un médico que aún no tiene cita. Lo ve ADMISION: no incluye contenido clínico. */
+export interface ControlPendiente {
+  atencionId: number
+  pacienteId: number
+  numeroHc: string
+  paciente: string
+  medicoId: number
+  medico: string
+  consultorioId: number
+  consultorio: string
+  fechaSugerida: string
+  vencido: boolean
 }
 
 // --- Documentos clínicos (fase 6) ---
