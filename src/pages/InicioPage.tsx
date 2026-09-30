@@ -402,7 +402,7 @@ function Indicador({
 }) {
   return (
     <Card className={destacado ? "ring-marca/30" : undefined}>
-      <CardContent className="flex items-start justify-between gap-3">
+      <CardContent className="flex flex-row items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-1">
           <span className="text-sm text-muted-foreground">{titulo}</span>
           {valor === undefined ? (
