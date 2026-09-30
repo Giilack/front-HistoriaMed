@@ -406,6 +406,122 @@ export interface DocumentoClinico {
   creadoEn: string
 }
 
+// --- Revisión de documentos, antecedentes y laboratorio (fase 8) ---
+
+export type CategoriaItem =
+  | "ALERGIA"
+  | "DIAGNOSTICO"
+  | "MEDICAMENTO"
+  | "LABORATORIO"
+  | "ANTECEDENTE"
+  | "OTRO"
+
+export const NOMBRE_CATEGORIA: Record<CategoriaItem, string> = {
+  ALERGIA: "Alergias",
+  DIAGNOSTICO: "Diagnósticos previos",
+  MEDICAMENTO: "Medicamentos en uso",
+  LABORATORIO: "Resultados de laboratorio",
+  ANTECEDENTE: "Antecedentes",
+  OTRO: "Otra información",
+}
+
+export type EstadoItem = "PROPUESTO" | "ACEPTADO" | "CORREGIDO" | "DESCARTADO"
+
+export type TipoAntecedente =
+  | "PERSONAL"
+  | "FAMILIAR"
+  | "QUIRURGICO"
+  | "DIAGNOSTICO_PREVIO"
+  | "MEDICACION_HABITUAL"
+  | "OTRO"
+
+export const NOMBRE_TIPO_ANTECEDENTE: Record<TipoAntecedente, string> = {
+  PERSONAL: "Personal",
+  FAMILIAR: "Familiar",
+  QUIRURGICO: "Quirúrgico",
+  DIAGNOSTICO_PREVIO: "Diagnóstico previo",
+  MEDICACION_HABITUAL: "Medicación habitual",
+  OTRO: "Otro",
+}
+
+/** Un dato del documento. Según la categoría se usan unos campos u otros. */
+export interface ItemExtraccion {
+  id: number
+  categoria: CategoriaItem
+  estado: EstadoItem
+  descripcion: string
+  detalle: string | null
+  fecha: string | null
+  tipoAlergia: TipoAlergia | null
+  gravedad: GravedadAlergia | null
+  cieCodigo: string | null
+  medicamentoId: number | null
+  valor: string | null
+  unidad: string | null
+  rangoReferencia: string | null
+  tipoAntecedente: TipoAntecedente | null
+  fragmentoOrigen: string | null
+  pagina: number | null
+  corregido: boolean
+  creadoPorId: number
+  creadoPor: string
+}
+
+export type EstadoExtraccion = "PENDIENTE_REVISION" | "VALIDADA" | "RECHAZADA"
+
+/** Revisión de los datos de un documento: la valida un médico. */
+export interface Extraccion {
+  id: number
+  documentoId: number
+  pacienteId: number
+  origen: "MANUAL" | "IA"
+  estado: EstadoExtraccion
+  motivoRechazo: string | null
+  creadoPor: string
+  creadoEn: string
+  revisadoPor: string | null
+  revisadoEn: string | null
+  items: ItemExtraccion[]
+}
+
+export interface ExtraccionResumen {
+  id: number
+  documentoId: number
+  origen: "MANUAL" | "IA"
+  estado: EstadoExtraccion
+  totalItems: number
+  creadoEn: string
+}
+
+export interface Antecedente {
+  id: number
+  tipo: TipoAntecedente
+  descripcion: string
+  detalle: string | null
+  fecha: string | null
+  cieCodigo: string | null
+  medicamentoId: number | null
+  documentoId: number | null
+  activo: boolean
+  motivoInactivacion: string | null
+  registradoPor: string
+  creadoEn: string
+}
+
+export interface ResultadoLaboratorio {
+  id: number
+  examen: string
+  valor: string
+  unidad: string | null
+  rangoReferencia: string | null
+  fecha: string | null
+  documentoId: number | null
+  activo: boolean
+  motivoInactivacion: string | null
+  registradoPor: string
+  creadoEn: string
+}
+
 // --- Reportes (fase 7) ---
 
 export interface Conteo {
