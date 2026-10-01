@@ -1,9 +1,9 @@
-# Integración continua del frontend: tipos, reglas de estilo y compilación en cada push y en cada Pull Request.
+# Integración continua del frontend: tipos, reglas de estilo y compilación en cada push a main o develop y en cada Pull Request.
 name: Verificación del frontend
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
 
 jobs:
