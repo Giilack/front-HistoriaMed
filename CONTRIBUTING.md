@@ -7,7 +7,7 @@ El equipo usa **GitFlow**. Nadie sube cambios directamente a `main` ni a `develo
 
 | Rama | Sale de | Se une a | Para qué |
 |---|---|---|---|
-| `main` | — | — | Lo que está en producción. Vercel la publica automáticamente; además crea una vista previa para cada rama y PR (útil para revisar, aunque el inicio de sesión no funciona en ellas). Cada versión lleva una etiqueta (`v1.0.0`, `v1.1.0`…). |
+| `main` | — | — | Versión estable. Cada versión lleva una etiqueta (`v0.9.0`, `v1.0.0`…). |
 | `develop` | `main` | — | Integración: aquí se juntan las funcionalidades terminadas. |
 | `feature/<nombre>` | `develop` | `develop` | Una tarea o funcionalidad. |
 | `release/<versión>` | `develop` | `main` y `develop` | Preparar una versión: solo correcciones, nada nuevo. |
@@ -93,7 +93,8 @@ Y además:
 - **Nunca** subir `.env`, claves, contraseñas.
 - Solo datos ficticios de pacientes, también en capturas y pruebas.
 - Código y mensajes en español; sufijos técnicos en inglés (`PacienteService`).
-- Las reglas del proyecto están en `CLAUDE.md` y la lógica de negocio en `plan.md`.
+- La lógica de negocio y las decisiones están en `plan.md` (repositorio del backend). Los permisos los decide el
+  backend: el frontend solo muestra u oculta opciones.
 - Los permisos los decide el backend: el frontend solo oculta lo que un rol no puede usar.
 
 ## 6. Mensajes de commit

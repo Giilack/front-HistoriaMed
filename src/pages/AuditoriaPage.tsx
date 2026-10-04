@@ -171,15 +171,14 @@ export function AuditoriaPage() {
                 <TableHead>Usuario</TableHead>
                 <TableHead>Acción</TableHead>
                 <TableHead>Recurso</TableHead>
-                <TableHead>Detalle</TableHead>
-                <TableHead className="pr-4">IP</TableHead>
+                <TableHead className="pr-4">Detalle</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {!pagina
                 ? [0, 1, 2, 3, 4, 5].map((i) => (
                     <TableRow key={i}>
-                      <TableCell colSpan={6} className="px-4">
+                      <TableCell colSpan={5} className="px-4">
                         <Skeleton className="h-6 w-full" />
                       </TableCell>
                     </TableRow>
@@ -222,13 +221,10 @@ export function AuditoriaPage() {
                           </span>
                         )}
                       </TableCell>
-                      <TableCell className="max-w-72 truncate whitespace-nowrap text-muted-foreground">
+                      <TableCell className="max-w-96 truncate pr-4 whitespace-nowrap text-muted-foreground">
                         <span title={r.detalle ?? undefined}>
                           {r.detalle ?? ""}
                         </span>
-                      </TableCell>
-                      <TableCell className="pr-4 font-mono text-xs text-muted-foreground">
-                        {r.ip ?? ""}
                       </TableCell>
                     </TableRow>
                   ))}
