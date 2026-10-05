@@ -34,6 +34,7 @@ const ACCIONES = [
   "CERRAR",
   "DESCARGAR",
   "VALIDAR",
+  "CONSULTA_IA",
 ]
 
 // Acciones que merecen atención del administrador

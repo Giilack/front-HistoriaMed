@@ -517,12 +517,17 @@ export interface ItemExtraccion {
   tipoAntecedente: TipoAntecedente | null
   fragmentoOrigen: string | null
   pagina: number | null
+  /** Lo propuso la IA (aunque luego alguien lo haya corregido). */
+  propuestoPorIa: boolean
   corregido: boolean
   creadoPorId: number
   creadoPor: string
 }
 
 export type EstadoExtraccion = "PENDIENTE_REVISION" | "VALIDADA" | "RECHAZADA"
+
+/** Estado de la extracción con IA; null si no se usó. */
+export type EstadoIa = "PROCESANDO" | "COMPLETADA" | "ERROR"
 
 /** Revisión de los datos de un documento: la valida un médico. */
 export interface Extraccion {
@@ -536,6 +541,9 @@ export interface Extraccion {
   creadoEn: string
   revisadoPor: string | null
   revisadoEn: string | null
+  iaEstado: EstadoIa | null
+  iaModelo: string | null
+  iaError: string | null
   items: ItemExtraccion[]
 }
 
@@ -544,6 +552,7 @@ export interface ExtraccionResumen {
   documentoId: number
   origen: "MANUAL" | "IA"
   estado: EstadoExtraccion
+  iaEstado: EstadoIa | null
   totalItems: number
   creadoEn: string
 }
