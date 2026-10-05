@@ -1,5 +1,13 @@
 import * as React from "react"
-import { Ban, Eye, FileImage, FileText, FolderOpen, Upload } from "lucide-react"
+import {
+  Ban,
+  ClipboardList,
+  Eye,
+  FileImage,
+  FileText,
+  FolderOpen,
+  Upload,
+} from "lucide-react"
 
 import { useAuth } from "@/auth/AuthContext"
 import { useConfirmacion } from "@/components/Confirmacion"
@@ -11,9 +19,14 @@ import { fechaLocal, hoyISO } from "@/lib/fechas"
 import {
   NOMBRE_TIPO_DOCUMENTO_CLINICO,
   type DocumentoClinico,
+  type ExtraccionResumen,
   type TipoDocumentoClinico,
 } from "@/lib/types"
 import { useApi } from "@/lib/useApi"
+import {
+  EstadoRevisionEtiqueta,
+  RevisionDocumento,
+} from "@/pages/extraccion/RevisionDocumento"
 
 const MAXIMO_BYTES = 10 * 1024 * 1024
 const ACEPTADOS = ".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
@@ -47,6 +60,21 @@ export function PanelDocumentos({
   const [subiendo, setSubiendo] = React.useState(false)
   const [verAnulados, setVerAnulados] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+
+  // Revisión de los datos de cada documento (dato clínico: solo TRIAJE y MEDICO)
+  const [revisiones, setRevisiones] = React.useState<ExtraccionResumen[]>([])
+  const [revisando, setRevisando] = React.useState<DocumentoClinico | null>(
+    null
+  )
+  const cargarRevisiones = React.useCallback(() => {
+    if (!puedeVer) return
+    api<ExtraccionResumen[]>(`/api/pacientes/${pacienteId}/extracciones`)
+      .then(setRevisiones)
+      .catch(() => setRevisiones([]))
+  }, [pacienteId, puedeVer])
+  React.useEffect(cargarRevisiones, [cargarRevisiones])
+  const revisionDe = (d: DocumentoClinico) =>
+    revisiones.find((r) => r.documentoId === d.id && r.estado !== "RECHAZADA")
 
   const vigentes = documentos?.filter((d) => d.estado === "RECIBIDO") ?? []
   const anulados = documentos?.filter((d) => d.estado === "ANULADO") ?? []
@@ -104,6 +132,7 @@ export function PanelDocumentos({
           {vigentes.map((d) => {
             const imagen = d.contentType.startsWith("image/")
             const Icono = imagen ? FileImage : FileText
+            const revision = revisionDe(d)
             return (
               <li
                 key={d.id}
@@ -120,6 +149,9 @@ export function PanelDocumentos({
                     {d.descripcion && (
                       <span className="font-medium">{d.descripcion}</span>
                     )}
+                    {revision && (
+                      <EstadoRevisionEtiqueta estado={revision.estado} />
+                    )}
                   </span>
                   <span className="mt-0.5 block truncate text-xs text-muted-foreground">
                     {d.fechaDocumento &&
@@ -128,7 +160,28 @@ export function PanelDocumentos({
                     {d.subidoPor}
                   </span>
                 </span>
-                <span className="flex shrink-0 gap-1">
+                <span className="flex shrink-0 flex-wrap justify-end gap-1">
+                  {puedeVer && (
+                    <Button
+                      size="xs"
+                      variant={
+                        revision?.estado === "PENDIENTE_REVISION" &&
+                        usuario?.rol === "MEDICO"
+                          ? "default"
+                          : "outline"
+                      }
+                      onClick={() => setRevisando(d)}
+                    >
+                      <ClipboardList />
+                      {!revision
+                        ? "Registrar datos"
+                        : revision.estado === "VALIDADA"
+                          ? "Ver datos"
+                          : usuario?.rol === "MEDICO"
+                            ? `Validar datos (${revision.totalItems})`
+                            : `Completar datos (${revision.totalItems})`}
+                    </Button>
+                  )}
                   {puedeVer && (
                     <Button size="xs" variant="outline" onClick={() => ver(d)}>
                       <Eye />
@@ -151,6 +204,16 @@ export function PanelDocumentos({
             )
           })}
         </ul>
+      )}
+
+      {revisando && (
+        <RevisionDocumento
+          documento={revisando}
+          alCerrar={() => {
+            setRevisando(null)
+            cargarRevisiones()
+          }}
+        />
       )}
 
       {subiendo ? (

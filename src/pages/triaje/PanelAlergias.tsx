@@ -5,6 +5,7 @@ import { useConfirmacion } from "@/components/Confirmacion"
 import { Alerta, Campo, Input, Select } from "@/components/form"
 import { Button } from "@/components/ui/button"
 import { ApiError, api, json } from "@/lib/api"
+import { useCambioClinico } from "@/lib/cambiosClinicos"
 import {
   NOMBRE_GRAVEDAD,
   NOMBRE_TIPO_ALERGIA,
@@ -43,6 +44,8 @@ export function PanelAlergias({ pacienteId }: { pacienteId: number }) {
     error: errorCarga,
     recargar,
   } = useApi<Alergia[]>(`/api/pacientes/${pacienteId}/alergias`)
+  // Al validar los datos de un documento pueden agregarse alergias
+  useCambioClinico(recargar)
   const [agregando, setAgregando] = React.useState(false)
   const [verInactivas, setVerInactivas] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)

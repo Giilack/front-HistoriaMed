@@ -1,0 +1,23 @@
+# Integración continua del frontend: tipos, reglas de estilo y compilación en cada push a main o develop y en cada Pull Request.
+name: Verificación del frontend
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # La versión de pnpm se toma del campo "packageManager" de package.json
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run typecheck
+      - run: pnpm run lint
+      - run: pnpm run build

@@ -15,13 +15,25 @@ import {
 } from "@/components/ui/dialog"
 import { ApiError, api, json } from "@/lib/api"
 import { formatearHora, hoyISO } from "@/lib/fechas"
-import type { Cita, Consultorio, Medico, PacienteResumen } from "@/lib/types"
+import type {
+  Cita,
+  Consultorio,
+  ControlPendiente,
+  Medico,
+  PacienteResumen,
+} from "@/lib/types"
 
 import { BuscadorPaciente } from "./BuscadorPaciente"
 
-/** nueva: cita programada · sinCita: llegó sin cita (va directo a la cola) · reprogramar: cambia fecha/hora/médico */
+/**
+ * nueva: cita programada · sinCita: llegó sin cita (va directo a la cola) · reprogramar: cambia fecha/hora/médico ·
+ * control: programa el control que sugirió un médico (paciente, médico y fecha ya vienen propuestos)
+ */
 export type ModoCita =
-  { tipo: "nueva" } | { tipo: "sinCita" } | { tipo: "reprogramar"; cita: Cita }
+  | { tipo: "nueva" }
+  | { tipo: "sinCita" }
+  | { tipo: "reprogramar"; cita: Cita }
+  | { tipo: "control"; control: ControlPendiente }
 
 function crearEsquema(conHorario: boolean) {
   return z
@@ -67,6 +79,17 @@ export function FormularioCita({
   alCancelar: () => void
 }) {
   const reprogramando = modo.tipo === "reprogramar" ? modo.cita : null
+  const control = modo.tipo === "control" ? modo.control : null
+  // En estos modos el paciente ya está definido y no se puede cambiar
+  const pacienteFijo = reprogramando
+    ? reprogramando.paciente
+    : control
+      ? {
+          id: control.pacienteId,
+          nombreCompleto: control.paciente,
+          numeroHc: control.numeroHc,
+        }
+      : null
   const conHorario = modo.tipo !== "sinCita"
   const [paciente, setPaciente] = React.useState<PacienteResumen | null>(null)
   const [errorPaciente, setErrorPaciente] = React.useState<string>()
@@ -86,18 +109,32 @@ export function FormularioCita({
           hora: formatearHora(reprogramando.hora),
           motivo: reprogramando.motivo ?? "",
         }
-      : {
-          medicoId: "",
-          consultorioId: "",
-          fecha: hoyISO(),
-          hora: "",
-          motivo: "",
-        },
+      : control
+        ? {
+            medicoId: String(control.medicoId),
+            // Si el consultorio ya no está activo, no aparece en la lista y hay que elegir otro
+            consultorioId: consultorios.some(
+              (c) => c.id === control.consultorioId
+            )
+              ? String(control.consultorioId)
+              : "",
+            // Un control vencido se propone para hoy
+            fecha: control.vencido ? hoyISO() : control.fechaSugerida,
+            hora: "",
+            motivo: "Control",
+          }
+        : {
+            medicoId: "",
+            consultorioId: "",
+            fecha: hoyISO(),
+            hora: "",
+            motivo: "",
+          },
   })
 
   async function enviar(d: Datos) {
     setError(null)
-    const pacienteId = reprogramando?.paciente.id ?? paciente?.id
+    const pacienteId = pacienteFijo?.id ?? paciente?.id
     if (!pacienteId) {
       setErrorPaciente("seleccione el paciente")
       return
@@ -131,6 +168,7 @@ export function FormularioCita({
     nueva: "Programar cita",
     sinCita: "Llegada sin cita",
     reprogramar: "Reprogramar cita",
+    control: "Programar cita de control",
   }[modo.tipo]
   const descripcion = {
     nueva: "Elija al paciente, el médico, el consultorio y el horario.",
@@ -138,6 +176,8 @@ export function FormularioCita({
       "El paciente quedará registrado para hoy y pasará directamente a la cola de triaje.",
     reprogramar:
       "Cambie el médico, el consultorio o el horario. El paciente no cambia.",
+    control:
+      "El médico sugirió este control. Confirme la fecha con el paciente y elija la hora.",
   }[modo.tipo]
 
   return (
@@ -155,12 +195,12 @@ export function FormularioCita({
           {error && <Alerta>{error}</Alerta>}
 
           <Campo label="Paciente">
-            {reprogramando ? (
+            {pacienteFijo ? (
               <div className="flex items-center gap-3 rounded-lg border bg-muted/40 px-3 py-2">
                 <span className="text-sm">
-                  <b>{reprogramando.paciente.nombreCompleto}</b>
+                  <b>{pacienteFijo.nombreCompleto}</b>
                   <span className="block font-mono text-xs text-muted-foreground">
-                    {reprogramando.paciente.numeroHc}
+                    {pacienteFijo.numeroHc}
                   </span>
                 </span>
               </div>
