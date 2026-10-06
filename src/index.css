@@ -147,6 +147,12 @@
     --sidebar-ring: #38bdf8;
 }
 
+/* Edge muestra su propio botón para ver la contraseña además del nuestro: se oculta el del navegador */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+
 @layer base {
   /* Casillas y opciones nativas con el color de la marca */
   input[type="checkbox"],
