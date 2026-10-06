@@ -14,7 +14,11 @@ interface AuthState {
   usuario: Usuario | null
   /** true mientras se intenta recuperar la sesión al cargar la página */
   cargando: boolean
-  login: (username: string, password: string) => Promise<void>
+  login: (
+    username: string,
+    password: string,
+    captchaToken?: string | null
+  ) => Promise<void>
   logout: () => Promise<void>
   cambiarPassword: (actual: string, nueva: string) => Promise<void>
 }
@@ -40,11 +44,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [aplicarSesion])
 
   const login = React.useCallback(
-    async (username: string, password: string) => {
+    async (
+      username: string,
+      password: string,
+      captchaToken?: string | null
+    ) => {
       aplicarSesion(
         await api<LoginResponse>("/api/auth/login", {
           method: "POST",
-          ...json({ username, password }),
+          ...json({ username, password, captchaToken: captchaToken ?? null }),
         })
       )
     },
