@@ -3,6 +3,8 @@ import { Eye, EyeOff, LockKeyhole, LogIn, UserRound } from "lucide-react"
 
 import { useAuth } from "@/auth/AuthContext"
 import { AuthLayout } from "@/components/AuthLayout"
+import { CaptchaTurnstile } from "@/components/CaptchaTurnstile"
+import { ApiError } from "@/lib/api"
 import { Alerta, Input } from "@/components/form"
 import { Button } from "@/components/ui/button"
 
@@ -14,15 +16,25 @@ export function LoginPage() {
   const [mayusculas, setMayusculas] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [enviando, setEnviando] = React.useState(false)
+  // Tras 3 intentos fallidos con el mismo usuario, el backend exige el CAPTCHA (CAPTCHA_REQUERIDO)
+  const [pideCaptcha, setPideCaptcha] = React.useState(false)
+  const [captchaToken, setCaptchaToken] = React.useState<string | null>(null)
+  const [versionCaptcha, setVersionCaptcha] = React.useState(0)
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
     setEnviando(true)
     try {
-      await login(username.trim(), password)
+      await login(username.trim(), password, pideCaptcha ? captchaToken : null)
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo iniciar sesión")
+      if (err instanceof ApiError && err.codigo === "CAPTCHA_REQUERIDO") {
+        setPideCaptcha(true)
+      }
+      // Cada token sirve una sola vez: se pide uno nuevo para el siguiente intento
+      setCaptchaToken(null)
+      setVersionCaptcha((v) => v + 1)
     } finally {
       setEnviando(false)
     }
@@ -107,11 +119,21 @@ export function LoginPage() {
           )}
         </label>
 
+        {pideCaptcha && (
+          <div className="flex flex-col gap-1.5 text-sm">
+            <span className="font-medium">Verificación de seguridad</span>
+            <CaptchaTurnstile
+              version={versionCaptcha}
+              alResolver={setCaptchaToken}
+            />
+          </div>
+        )}
+
         <Button
           type="submit"
           size="lg"
           className="h-10 w-full"
-          disabled={enviando}
+          disabled={enviando || (pideCaptcha && !captchaToken)}
         >
           <LogIn aria-hidden />
           {enviando ? "Ingresando…" : "Ingresar"}

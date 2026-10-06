@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Variables locales (pueden tener claves)
+.env
+.env.local
+.env.*.local
