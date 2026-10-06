@@ -18,19 +18,44 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatearFecha, hoyISO } from "@/lib/fechas"
 import { MENU, TITULO_VISTA, type Vista } from "@/lib/navegacion"
-import { AuditoriaPage } from "@/pages/AuditoriaPage"
 import {
   CambiarPasswordPage,
   DialogoCambiarPassword,
 } from "@/pages/CambiarPasswordPage"
-import { CitasPage } from "@/pages/citas/CitasPage"
-import { ColaPage } from "@/pages/citas/ColaPage"
-import { ConsultoriosPage } from "@/pages/ConsultoriosPage"
-import { InicioPage } from "@/pages/InicioPage"
 import { LoginPage } from "@/pages/LoginPage"
-import { PacientesPage } from "@/pages/pacientes/PacientesPage"
-import { ReportesPage } from "@/pages/ReportesPage"
-import { UsuariosPage } from "@/pages/UsuariosPage"
+
+/*
+ * Cada pantalla se descarga recién cuando se abre: la página de inicio de sesión carga solo lo necesario para
+ * entrar, y cada rol descarga solo las pantallas que usa.
+ */
+const AuditoriaPage = React.lazy(() =>
+  import("@/pages/AuditoriaPage").then((m) => ({ default: m.AuditoriaPage }))
+)
+const CitasPage = React.lazy(() =>
+  import("@/pages/citas/CitasPage").then((m) => ({ default: m.CitasPage }))
+)
+const ColaPage = React.lazy(() =>
+  import("@/pages/citas/ColaPage").then((m) => ({ default: m.ColaPage }))
+)
+const ConsultoriosPage = React.lazy(() =>
+  import("@/pages/ConsultoriosPage").then((m) => ({
+    default: m.ConsultoriosPage,
+  }))
+)
+const InicioPage = React.lazy(() =>
+  import("@/pages/InicioPage").then((m) => ({ default: m.InicioPage }))
+)
+const PacientesPage = React.lazy(() =>
+  import("@/pages/pacientes/PacientesPage").then((m) => ({
+    default: m.PacientesPage,
+  }))
+)
+const ReportesPage = React.lazy(() =>
+  import("@/pages/ReportesPage").then((m) => ({ default: m.ReportesPage }))
+)
+const UsuariosPage = React.lazy(() =>
+  import("@/pages/UsuariosPage").then((m) => ({ default: m.UsuariosPage }))
+)
 
 export function App() {
   const { usuario, cargando } = useAuth()
@@ -90,19 +115,31 @@ export function App() {
         </header>
         <main className="flex-1 p-4 md:p-6">
           <div className="mx-auto w-full max-w-7xl">
-            {vistaActual === "inicio" && <InicioPage alNavegar={setVista} />}
-            {vistaActual === "citas" && <CitasPage />}
-            {vistaActual === "colaTriaje" && <ColaPage modo="triaje" />}
-            {vistaActual === "misPacientes" && <ColaPage modo="medico" />}
-            {vistaActual === "pacientes" && <PacientesPage />}
-            {vistaActual === "consultorios" && <ConsultoriosPage />}
-            {vistaActual === "usuarios" && <UsuariosPage />}
-            {vistaActual === "reportes" && <ReportesPage />}
-            {vistaActual === "auditoria" && <AuditoriaPage />}
+            <React.Suspense fallback={<CargandoPantalla />}>
+              {vistaActual === "inicio" && <InicioPage alNavegar={setVista} />}
+              {vistaActual === "citas" && <CitasPage />}
+              {vistaActual === "colaTriaje" && <ColaPage modo="triaje" />}
+              {vistaActual === "misPacientes" && <ColaPage modo="medico" />}
+              {vistaActual === "pacientes" && <PacientesPage />}
+              {vistaActual === "consultorios" && <ConsultoriosPage />}
+              {vistaActual === "usuarios" && <UsuariosPage />}
+              {vistaActual === "reportes" && <ReportesPage />}
+              {vistaActual === "auditoria" && <AuditoriaPage />}
+            </React.Suspense>
           </div>
         </main>
       </SidebarInset>
     </SidebarProvider>
+  )
+}
+
+function CargandoPantalla() {
+  return (
+    <div className="flex flex-col gap-3" aria-busy="true">
+      <Skeleton className="h-8 w-56" />
+      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-64 w-full" />
+    </div>
   )
 }
 
