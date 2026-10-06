@@ -6,6 +6,8 @@ import { useApi, useDebounce } from "@/lib/useApi"
 
 /**
  * Buscador para agregar un elemento de un catálogo (CIE-10 o medicamentos). Al elegir, limpia la búsqueda.
+ * Los resultados se muestran debajo, dentro del flujo de la página (no flotando): las tarjetas recortan lo que
+ * sobresale de ellas y una lista flotante quedaba cortada.
  */
 export function BuscadorCatalogo<T>({
   ruta,
@@ -24,17 +26,20 @@ export function BuscadorCatalogo<T>({
   const q = useDebounce(texto.trim(), 250)
 
   return (
-    <div className="relative">
-      <Search
-        className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-        aria-hidden
-      />
-      <Input
-        className="pl-9"
-        placeholder={placeholder}
-        value={texto}
-        onChange={(e) => setTexto(e.target.value)}
-      />
+    <div className="flex flex-col gap-1">
+      <div className="relative">
+        <Search
+          className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+          aria-hidden
+        />
+        <Input
+          className="pl-9"
+          placeholder={placeholder}
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+          onKeyDown={(e) => e.key === "Escape" && setTexto("")}
+        />
+      </div>
       {q.length >= 2 && (
         <Resultados
           ruta={`${ruta}?${new URLSearchParams({ q })}`}
@@ -64,7 +69,10 @@ function Resultados<T>({
   const { datos } = useApi<T[]>(ruta)
   if (!datos) return null
   return (
-    <ul className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border bg-popover p-1 text-sm text-popover-foreground shadow-lg">
+    <ul
+      className="max-h-64 w-full overflow-y-auto rounded-lg border bg-popover p-1 text-sm text-popover-foreground shadow-sm"
+      aria-label="Resultados del catálogo"
+    >
       {datos.length === 0 && (
         <li className="px-3 py-2 text-muted-foreground">
           Sin resultados en el catálogo.
