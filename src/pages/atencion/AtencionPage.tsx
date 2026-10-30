@@ -44,6 +44,7 @@ import {
 } from "@/lib/types"
 import { useApi } from "@/lib/useApi"
 import { cn } from "@/lib/utils"
+import { AsistenteClinico } from "@/pages/asistente/AsistenteClinico"
 import { PanelDocumentos } from "@/pages/documentos/PanelDocumentos"
 import { PanelAntecedentes } from "@/pages/extraccion/PanelAntecedentes"
 import { PanelLaboratorio } from "@/pages/extraccion/PanelLaboratorio"
@@ -335,6 +336,8 @@ export function AtencionPage({
           <SeccionTarjeta icono={FileText} titulo="Documentos">
             <PanelDocumentos pacienteId={p.id} citaId={atencion.citaId} />
           </SeccionTarjeta>
+          {/* El médico consulta la historia mientras atiende, sin salir de la atención */}
+          <AsistenteClinico pacienteId={p.id} compacto />
           <HistoriaClinica pacienteId={p.id} excluirId={atencion.id} />
         </div>
       </div>
