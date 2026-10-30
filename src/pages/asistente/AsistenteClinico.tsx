@@ -49,8 +49,16 @@ const FUENTES_VISIBLES = 4
  * Asistente clínico (HU010): el médico pregunta en lenguaje natural sobre la historia del paciente abierto. Responde
  * citando la fuente; si el dato no está, dice que no hay registro. La conversación vive solo en esta pantalla: no se
  * guarda en el servidor ni en la historia clínica.
+ *
+ * @param compacto para columnas angostas (la pantalla de atención): encabezado breve y menos alto
  */
-export function AsistenteClinico({ pacienteId }: { pacienteId: number }) {
+export function AsistenteClinico({
+  pacienteId,
+  compacto = false,
+}: {
+  pacienteId: number
+  compacto?: boolean
+}) {
   const { datos: estadoIa, error: errorEstado } = useApi<{
     disponible: boolean
     modelo: string | null
@@ -121,35 +129,42 @@ export function AsistenteClinico({ pacienteId }: { pacienteId: number }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-3">
-        <div className="space-y-1">
-          <CardTitle className="flex items-center gap-2">
-            <Bot className="size-5 text-marca" aria-hidden />
+        <div className="min-w-0 space-y-1">
+          <CardTitle className="flex items-center gap-2 whitespace-nowrap">
+            <Bot className="size-5 shrink-0 text-marca" aria-hidden />
             Asistente clínico
           </CardTitle>
           <CardDescription>
-            Responde solo con la historia de este paciente y cita de dónde sale
-            cada dato. No reemplaza el criterio médico.
+            {compacto
+              ? "Pregunte por la historia de este paciente. No reemplaza el criterio médico."
+              : "Responde solo con la historia de este paciente y cita de dónde sale cada dato. No reemplaza el criterio médico."}
           </CardDescription>
         </div>
         {mensajes.length > 0 && (
           <Button
             variant="ghost"
-            size="sm"
+            size={compacto ? "icon-sm" : "sm"}
+            className="shrink-0"
             onClick={() => {
               setMensajes([])
               setError(null)
             }}
             disabled={enviando}
+            title="Nueva conversación"
+            aria-label="Nueva conversación"
           >
             <Eraser className="size-4" />
-            Nueva conversación
+            {!compacto && "Nueva conversación"}
           </Button>
         )}
       </CardHeader>
 
       <CardContent className="space-y-4">
         <div
-          className="max-h-[28rem] space-y-3 overflow-y-auto rounded-lg border bg-muted/30 p-3"
+          className={cn(
+            "space-y-3 overflow-y-auto rounded-lg border bg-muted/30 p-3",
+            compacto ? "max-h-80" : "max-h-[28rem]"
+          )}
           aria-live="polite"
         >
           {mensajes.length === 0 && (
