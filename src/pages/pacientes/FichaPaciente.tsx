@@ -2,6 +2,7 @@ import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, useWatch } from "react-hook-form"
 import {
+  Bot,
   CalendarDays,
   CircleCheck,
   CircleX,
@@ -55,6 +56,7 @@ import {
 import { useApi } from "@/lib/useApi"
 import { cn } from "@/lib/utils"
 import { HistoriaClinica } from "@/pages/atencion/HistoriaClinica"
+import { AsistenteClinico } from "@/pages/asistente/AsistenteClinico"
 import { PanelDocumentos } from "@/pages/documentos/PanelDocumentos"
 import { PanelAntecedentes } from "@/pages/extraccion/PanelAntecedentes"
 import { PanelLaboratorio } from "@/pages/extraccion/PanelLaboratorio"
@@ -228,6 +230,9 @@ export function FichaPaciente({
                 icono={Stethoscope}
                 texto="Historia clínica"
               />
+            )}
+            {esMedico && (
+              <Pestana valor="asistente" icono={Bot} texto="Asistente" />
             )}
             <Pestana valor="documentos" icono={FileText} texto="Documentos" />
             <Pestana valor="citas" icono={CalendarDays} texto="Citas" />
@@ -406,6 +411,12 @@ export function FichaPaciente({
           {esMedico && (
             <TabsContent value="historia" className="pt-4">
               <HistoriaClinica pacienteId={paciente.id} />
+            </TabsContent>
+          )}
+
+          {esMedico && (
+            <TabsContent value="asistente" className="pt-4">
+              <AsistenteClinico pacienteId={paciente.id} />
             </TabsContent>
           )}
 
