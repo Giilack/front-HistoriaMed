@@ -5,10 +5,12 @@ import {
   ExternalLink,
   FlaskConical,
   History,
+  LoaderCircle,
   Pencil,
   Pill,
   Plus,
   ShieldAlert,
+  Sparkles,
   StickyNote,
   Trash2,
   type LucideIcon,
@@ -29,6 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { abrirArchivo, api, json } from "@/lib/api"
 import { avisarCambioClinico } from "@/lib/cambiosClinicos"
 import { formatearFecha } from "@/lib/fechas"
+import { useApi } from "@/lib/useApi"
 import {
   NOMBRE_CATEGORIA,
   NOMBRE_GRAVEDAD,
@@ -179,6 +182,40 @@ export function RevisionDocumento({
     }
   }, [documento.id])
 
+  // ¿Está configurada la IA en el servidor? Si no, la revisión se llena a mano como siempre
+  const { datos: estadoIa } = useApi<{
+    disponible: boolean
+    modelo: string | null
+  }>("/api/ia/estado")
+  const procesando = extraccion?.iaEstado === "PROCESANDO"
+
+  // Mientras la IA lee el documento, se consulta su estado cada 3 segundos (sin datos clínicos) y al terminar se
+  // trae la revisión completa
+  const extraccionId = extraccion?.id
+  React.useEffect(() => {
+    if (!procesando || !extraccionId) return
+    const intervalo = setInterval(async () => {
+      try {
+        const estado = await api<{ iaEstado: string | null }>(
+          `/api/extracciones/${extraccionId}/ia`
+        )
+        if (estado.iaEstado === "PROCESANDO") return
+        clearInterval(intervalo)
+        const completa = await api<Extraccion>(
+          `/api/documentos/${documento.id}/extraccion`
+        )
+        setExtraccion(completa)
+        if (completa.iaEstado === "COMPLETADA")
+          toast.success(
+            `La IA propuso ${completa.items.length} dato(s). Revíselos con el documento.`
+          )
+      } catch {
+        // Un fallo de red puntual: se reintenta en la siguiente vuelta
+      }
+    }, 3000)
+    return () => clearInterval(intervalo)
+  }, [procesando, extraccionId, documento.id])
+
   const pendiente = extraccion?.estado === "PENDIENTE_REVISION"
   const items = extraccion?.items ?? []
   const aceptados = items.filter((i) => !descartados.has(i.id))
@@ -201,6 +238,13 @@ export function RevisionDocumento({
       setEnviando(false)
     }
   }
+
+  const extraerConIa = () =>
+    ejecutar(() =>
+      api<Extraccion>(`/api/extracciones/${extraccion!.id}/ia`, {
+        method: "POST",
+      })
+    )
 
   const quitar = (item: ItemExtraccion) =>
     ejecutar(() =>
@@ -364,14 +408,41 @@ export function RevisionDocumento({
                   </section>
                 ))}
 
-                {pendiente && items.length === 0 && !formulario && (
-                  <p className="rounded-lg border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
-                    Todavía no hay datos. Elija abajo qué tipo de dato quiere
-                    agregar.
-                  </p>
-                )}
+                {procesando && <IaTrabajando modelo={extraccion.iaModelo} />}
 
                 {pendiente &&
+                  !procesando &&
+                  extraccion.iaEstado === "ERROR" && (
+                    <Alerta>
+                      La IA no pudo procesar el documento: {extraccion.iaError}
+                    </Alerta>
+                  )}
+
+                {pendiente &&
+                  !procesando &&
+                  items.length === 0 &&
+                  !formulario &&
+                  estadoIa?.disponible && (
+                    <OfertaIa
+                      reintento={extraccion.iaEstado === "ERROR"}
+                      enviando={enviando}
+                      alPedir={extraerConIa}
+                    />
+                  )}
+
+                {pendiente &&
+                  !procesando &&
+                  items.length === 0 &&
+                  !formulario && (
+                    <p className="rounded-lg border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
+                      {estadoIa?.disponible
+                        ? "O llene los datos a mano: elija abajo qué tipo de dato quiere agregar."
+                        : "Todavía no hay datos. Elija abajo qué tipo de dato quiere agregar."}
+                    </p>
+                  )}
+
+                {pendiente &&
+                  !procesando &&
                   (formulario && !formulario.item ? (
                     <FormularioItem
                       // Al cambiar de categoría se empieza un formulario limpio
@@ -428,7 +499,7 @@ export function RevisionDocumento({
                   : `${aceptados.length} de ${items.length} pasarán a la historia`}
               </span>
               <Button
-                disabled={items.length === 0 || !!formulario}
+                disabled={items.length === 0 || !!formulario || procesando}
                 onClick={() => setPie("validar")}
               >
                 <ClipboardCheck />
@@ -496,6 +567,64 @@ export function RevisionDocumento({
   )
 }
 
+/** Invitación a que la IA lea el documento, en una revisión todavía vacía. */
+function OfertaIa({
+  reintento,
+  enviando,
+  alPedir,
+}: {
+  reintento: boolean
+  enviando: boolean
+  alPedir: () => void
+}) {
+  return (
+    <div className="flex flex-col gap-3 rounded-lg border border-violet-500/30 bg-violet-500/5 p-4">
+      <p className="flex items-center gap-2 font-medium">
+        <Sparkles
+          className="size-4 text-violet-600 dark:text-violet-300"
+          aria-hidden
+        />
+        Extraer los datos con IA
+      </p>
+      <p className="text-sm text-muted-foreground">
+        La IA lee el documento y propone los datos por categoría, con el texto
+        de donde salió cada uno. Nada pasa a la historia clínica hasta que un
+        médico lo valide.
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Usar solo con documentos de prueba (datos ficticios): el servicio de IA
+        gratuito puede conservar lo que se le envía.
+      </p>
+      <Button className="self-start" disabled={enviando} onClick={alPedir}>
+        <Sparkles />
+        {reintento ? "Intentar de nuevo con IA" : "Extraer con IA"}
+      </Button>
+    </div>
+  )
+}
+
+/** Mientras la IA lee el documento. */
+function IaTrabajando({ modelo }: { modelo: string | null }) {
+  return (
+    <div
+      className="flex items-center gap-3 rounded-lg border border-violet-500/30 bg-violet-500/5 p-4 text-sm"
+      role="status"
+    >
+      <LoaderCircle
+        className="size-5 shrink-0 animate-spin text-violet-600 dark:text-violet-300"
+        aria-hidden
+      />
+      <div>
+        <p className="font-medium">La IA está leyendo el documento…</p>
+        <p className="text-xs text-muted-foreground">
+          Puede tardar hasta un minuto{modelo ? ` (${modelo})` : ""}. Puede
+          cerrar esta ventana y volver luego.
+        </p>
+      </div>
+    </div>
+  )
+}
+
 /** Explica qué hacer según el estado de la revisión y el rol. */
 function Aviso({
   extraccion: e,
@@ -505,6 +634,16 @@ function Aviso({
   esMedico: boolean
 }) {
   if (e.estado === "PENDIENTE_REVISION") {
+    if (e.origen === "IA" && e.iaEstado === "COMPLETADA")
+      return (
+        <Alerta tipo="info">
+          Los datos marcados con <b>IA</b> los propuso {e.iaModelo ?? "la IA"}.
+          Compárelos con el documento: corrija o quite lo que no corresponda
+          {esMedico
+            ? " y desmarque lo que no deba pasar a la historia clínica."
+            : ". Un médico los validará."}
+        </Alerta>
+      )
     return (
       <Alerta tipo="info">
         {esMedico
@@ -568,8 +707,17 @@ function FilaItem({
             «{item.fragmentoOrigen}»{item.pagina && ` · pág. ${item.pagina}`}
           </p>
         )}
-        <p className="mt-1 text-xs text-muted-foreground">
-          Registrado por {item.creadoPor}
+        <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+          {item.propuestoPorIa && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/12 px-1.5 py-px font-medium text-violet-700 dark:text-violet-300">
+              <Sparkles className="size-3" aria-hidden />
+              IA
+            </span>
+          )}
+          {item.propuestoPorIa
+            ? "Propuesto por la IA a pedido de "
+            : "Registrado por "}
+          {item.creadoPor}
           {item.corregido &&
             item.estado === "PROPUESTO" &&
             " · corregido por el médico"}

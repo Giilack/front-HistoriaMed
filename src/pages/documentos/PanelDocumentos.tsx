@@ -173,13 +173,15 @@ export function PanelDocumentos({
                       onClick={() => setRevisando(d)}
                     >
                       <ClipboardList />
-                      {!revision
-                        ? "Registrar datos"
-                        : revision.estado === "VALIDADA"
-                          ? "Ver datos"
-                          : usuario?.rol === "MEDICO"
-                            ? `Validar datos (${revision.totalItems})`
-                            : `Completar datos (${revision.totalItems})`}
+                      {revision?.iaEstado === "PROCESANDO"
+                        ? "IA leyendo…"
+                        : !revision
+                          ? "Registrar datos"
+                          : revision.estado === "VALIDADA"
+                            ? "Ver datos"
+                            : usuario?.rol === "MEDICO"
+                              ? `Validar datos (${revision.totalItems})`
+                              : `Completar datos (${revision.totalItems})`}
                     </Button>
                   )}
                   {puedeVer && (
