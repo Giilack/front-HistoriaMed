@@ -82,7 +82,7 @@
     --muted-foreground: #64748b;
     --accent: #e0f2fe;
     --accent-foreground: #0c4a6e;
-    --destructive: oklch(0.577 0.245 27.325);
+    --destructive: #b91c1c;
     --border: #e2e8f0;
     --input: #cbd5e1;
     --ring: #38bdf8;
@@ -216,4 +216,85 @@ input::-ms-clear {
   .zona-impresion hr {
     border-color: #999 !important;
   }
+}
+
+/* --- Accesibilidad: los ajustes los eligen las personas en el panel de accesibilidad --- */
+html[data-tamano="grande"] {
+  font-size: 112.5%;
+}
+
+html[data-tamano="muy-grande"] {
+  font-size: 125%;
+}
+
+html[data-alto-contraste] {
+  --foreground: #000000;
+  --card-foreground: #000000;
+  --popover-foreground: #000000;
+  --muted-foreground: #1e293b;
+  --border: #334155;
+  --input: #334155;
+  --marca: #075985;
+  --ring: #000000;
+}
+
+html[data-alto-contraste].dark {
+  --foreground: #ffffff;
+  --card-foreground: #ffffff;
+  --popover-foreground: #ffffff;
+  --muted-foreground: #e2e8f0;
+  --border: #cbd5e1;
+  --input: #cbd5e1;
+  --marca: #7dd3fc;
+  --ring: #ffffff;
+}
+
+html[data-sin-movimiento] *,
+html[data-sin-movimiento] *::before,
+html[data-sin-movimiento] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html[data-subrayar-enlaces] a,
+html[data-subrayar-enlaces] [data-variant="link"],
+html[data-subrayar-enlaces] [data-variant="ghost"] {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* El foco siempre se ve, también con teclado en botones sin borde */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.salto-contenido {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 100;
+  transform: translateY(-200%);
+  border-radius: 0.5rem;
+  background: var(--marca-oscuro);
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+}
+
+.salto-contenido:focus {
+  transform: translateY(0);
 }

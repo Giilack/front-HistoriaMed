@@ -474,7 +474,7 @@ export function FormularioTriaje({
                       prioridad={evaluacion.prioridadSugerida}
                     />
                   </div>
-                  {evaluacion.imc && (
+                  {evaluacion.imc != null && (
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-muted-foreground">IMC</span>
                       <span className="font-semibold tabular-nums">

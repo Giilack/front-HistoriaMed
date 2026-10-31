@@ -179,6 +179,7 @@ export function ColaPage({ modo }: { modo: "triaje" | "medico" }) {
         acciones={
           <>
             <Select
+              aria-label="Filtrar por consultorio"
               className="w-full sm:w-60"
               value={consultorioId}
               onChange={(e) => setConsultorioId(e.target.value)}
