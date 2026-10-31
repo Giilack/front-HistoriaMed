@@ -26,7 +26,7 @@ try {
     resumen[nombre].lcpSegundos = Number((r.lhr.audits["largest-contentful-paint"].numericValue / 1000).toFixed(2))
   }
 } finally {
-  await navegador.kill().catch(() => {})
+  navegador.kill()
 }
 fs.writeFileSync(`${CARPETA}/resumen.json`, JSON.stringify(resumen, null, 2))
 console.log(JSON.stringify(resumen))
