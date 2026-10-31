@@ -2,6 +2,7 @@ import type * as React from "react"
 
 import { IlustracionMedica } from "@/components/IlustracionMedica"
 import { Marca } from "@/components/Marca"
+import { PanelAccesibilidad } from "@/components/PanelAccesibilidad"
 
 /**
  * Pantalla de acceso en dos paneles: a la izquierda el nombre y una ilustración (se oculta en pantallas
@@ -27,7 +28,8 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
         <IlustracionMedica className="relative w-full max-w-md" />
       </aside>
 
-      <main className="flex items-center justify-center bg-background px-4 py-10 sm:px-8">
+      <main className="relative flex items-center justify-center bg-background px-4 py-10 sm:px-8">
+        <PanelAccesibilidad className="absolute top-3 right-3" />
         <div className="flex w-full max-w-sm flex-col gap-8">
           <div className="lg:hidden">
             <Marca />

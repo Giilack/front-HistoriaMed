@@ -10,7 +10,11 @@
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "e2e": "mocha \"e2e/*.test.mjs\" --reporter mocha-junit-reporter --reporter-options mochaFile=e2e/resultados/junit.xml",
+    "e2e:funcional": "mocha e2e/funcional.test.mjs",
+    "e2e:usabilidad": "mocha e2e/usabilidad.test.mjs",
+    "e2e:lighthouse": "node e2e/lighthouse.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
@@ -31,17 +35,23 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@axe-core/webdriverjs": "^4.14.0",
     "@eslint/js": "^10",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6",
+    "chrome-launcher": "^1.2.2",
     "eslint": "^10",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17",
+    "lighthouse": "^12.8.2",
+    "mocha": "^11.8.0",
+    "mocha-junit-reporter": "^2.2.1",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.1",
+    "selenium-webdriver": "^4.52.0",
     "typescript": "~6",
     "typescript-eslint": "^8",
     "vite": "^8"

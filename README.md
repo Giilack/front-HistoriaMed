@@ -2,6 +2,18 @@
 
 Interfaz web del sistema de historias clínicas **HistoriaMed**. React 19 + TypeScript + Vite + Tailwind CSS + shadcn/ui.
 
+## Pruebas de interfaz
+
+Selenium WebDriver (Edge), axe-core (WCAG 2.1 AA) y Lighthouse. Con el sistema corriendo:
+
+```powershell
+$env:E2E_PASSWORD = "..."     # contraseña de los usuarios demo
+pnpm e2e                      # funcional y usabilidad; reporte JUnit en e2e/resultados/junit.xml
+pnpm e2e:lighthouse           # reportes en e2e/resultados/lighthouse/
+```
+
+Para la nube: `E2E_URL` con la dirección de Vercel y `E2E_SOLO_LECTURA=true`, que omite los casos que escriben.
+
 ## Requisitos
 
 - Node.js 20 o superior y **pnpm**.

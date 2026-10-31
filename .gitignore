@@ -27,3 +27,6 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+
+# Resultados de las pruebas de interfaz
+e2e/resultados/

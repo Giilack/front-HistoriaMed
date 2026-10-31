@@ -298,6 +298,7 @@ export function CitasPage() {
             </Button>
           </div>
           <Select
+            aria-label="Filtrar por consultorio"
             className="w-full sm:w-60"
             value={consultorioId}
             onChange={(e) => setConsultorioId(e.target.value)}
@@ -310,6 +311,7 @@ export function CitasPage() {
             ))}
           </Select>
           <Select
+            aria-label="Filtrar por médico"
             className="w-full sm:w-60"
             value={medicoId}
             onChange={(e) => setMedicoId(e.target.value)}
@@ -406,7 +408,7 @@ export function CitasPage() {
                               {formatearHora(c.hora)}
                             </span>
                           )}
-                          {c.numeroTurno && (
+                          {c.numeroTurno != null && (
                             <span className="block text-xs text-muted-foreground">
                               Turno {c.numeroTurno}
                             </span>

@@ -2,6 +2,7 @@ import * as React from "react"
 
 import { useAuth } from "@/auth/AuthContext"
 import { AppSidebar } from "@/components/layout/AppSidebar"
+import { PanelAccesibilidad } from "@/components/PanelAccesibilidad"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -61,6 +62,13 @@ export function App() {
   const { usuario, cargando } = useAuth()
   const [vista, setVista] = React.useState<Vista>("inicio")
   const [cambiandoPassword, setCambiandoPassword] = React.useState(false)
+  const principal = React.useRef<HTMLElement>(null)
+
+  // Quien usa lector de pantalla o teclado llega al contenido nuevo; sin esto el foco se queda en el menú
+  const navegar = (v: Vista) => {
+    setVista(v)
+    requestAnimationFrame(() => principal.current?.focus())
+  }
 
   if (cargando) {
     return (
@@ -84,9 +92,13 @@ export function App() {
 
   return (
     <SidebarProvider>
+      <title>{`${TITULO_VISTA[vistaActual]} · HistoriaMed`}</title>
+      <a href="#contenido" className="salto-contenido">
+        Saltar al contenido principal
+      </a>
       <AppSidebar
         vista={vistaActual}
-        alNavegar={setVista}
+        alNavegar={navegar}
         alCambiarPassword={() => setCambiandoPassword(true)}
       />
       {cambiandoPassword && (
@@ -112,11 +124,17 @@ export function App() {
           <span className="ml-auto hidden text-sm text-muted-foreground capitalize md:block">
             {formatearFecha(hoyISO())}
           </span>
+          <PanelAccesibilidad className="ml-auto md:ml-1" />
         </header>
-        <main className="flex-1 p-4 md:p-6">
+        <main
+          id="contenido"
+          ref={principal}
+          tabIndex={-1}
+          className="flex-1 p-4 outline-none md:p-6"
+        >
           <div className="mx-auto w-full max-w-7xl">
             <React.Suspense fallback={<CargandoPantalla />}>
-              {vistaActual === "inicio" && <InicioPage alNavegar={setVista} />}
+              {vistaActual === "inicio" && <InicioPage />}
               {vistaActual === "citas" && <CitasPage />}
               {vistaActual === "colaTriaje" && <ColaPage modo="triaje" />}
               {vistaActual === "misPacientes" && <ColaPage modo="medico" />}
