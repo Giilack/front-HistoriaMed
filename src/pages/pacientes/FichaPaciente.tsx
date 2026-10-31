@@ -80,9 +80,13 @@ const formatoFechaHora = new Intl.DateTimeFormat("es-PE", {
 
 export function FichaPaciente({
   id,
+  pestana,
+  alCambiarPestana,
   alVolver,
 }: {
   id: number
+  pestana?: string
+  alCambiarPestana: (pestana: string) => void
   alVolver: () => void
 }) {
   const { usuario } = useAuth()
@@ -91,6 +95,14 @@ export function FichaPaciente({
   // Datos clínicos (alergias, triajes): solo TRIAJE y MEDICO (plan.md, principio P1)
   const veDatosClinicos = usuario?.rol === "TRIAJE" || usuario?.rol === "MEDICO"
   const esMedico = usuario?.rol === "MEDICO"
+  const pestanas = [
+    "datos",
+    ...(veDatosClinicos ? ["clinico"] : []),
+    ...(esMedico ? ["historia", "asistente"] : []),
+    "documentos",
+    "citas",
+  ]
+  const pestanaActual = pestana && pestanas.includes(pestana) ? pestana : "datos"
   const {
     datos: paciente,
     error: errorCarga,
@@ -211,7 +223,10 @@ export function FichaPaciente({
       )}
 
       {modo === "ver" && (
-        <Tabs defaultValue="datos">
+        <Tabs
+          value={pestanaActual}
+          onValueChange={(v) => alCambiarPestana(String(v))}
+        >
           <TabsList
             variant="line"
             className="w-full justify-start gap-2 overflow-x-auto overflow-y-hidden border-b pb-0"

@@ -19,6 +19,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatearFecha, hoyISO } from "@/lib/fechas"
 import { MENU, TITULO_VISTA, type Vista } from "@/lib/navegacion"
+import { irA, RUTA_VISTA, useRuta, vistaDeRuta } from "@/lib/rutas"
 import {
   CambiarPasswordPage,
   DialogoCambiarPassword,
@@ -43,6 +44,11 @@ const ConsultoriosPage = React.lazy(() =>
     default: m.ConsultoriosPage,
   }))
 )
+const ImportacionPage = React.lazy(() =>
+  import("@/pages/importacion/ImportacionPage").then((m) => ({
+    default: m.ImportacionPage,
+  }))
+)
 const InicioPage = React.lazy(() =>
   import("@/pages/InicioPage").then((m) => ({ default: m.InicioPage }))
 )
@@ -60,15 +66,26 @@ const UsuariosPage = React.lazy(() =>
 
 export function App() {
   const { usuario, cargando } = useAuth()
-  const [vista, setVista] = React.useState<Vista>("inicio")
+  const ruta = useRuta()
   const [cambiandoPassword, setCambiandoPassword] = React.useState(false)
   const principal = React.useRef<HTMLElement>(null)
 
   // Quien usa lector de pantalla o teclado llega al contenido nuevo; sin esto el foco se queda en el menú
   const navegar = (v: Vista) => {
-    setVista(v)
+    irA(RUTA_VISTA[v])
     requestAnimationFrame(() => principal.current?.focus())
   }
+
+  // Una dirección que no existe o no es de este rol lleva al Inicio. El backend igual rechaza lo que no corresponda
+  const vista = vistaDeRuta(ruta)
+  const permitida =
+    usuario !== null &&
+    MENU.some((m) => m.vista === vista && m.roles.includes(usuario.rol))
+  const debeIrAInicio =
+    usuario !== null && !usuario.debeCambiarPassword && !permitida
+  React.useEffect(() => {
+    if (debeIrAInicio) irA(RUTA_VISTA.inicio, true)
+  }, [debeIrAInicio])
 
   if (cargando) {
     return (
@@ -84,11 +101,7 @@ export function App() {
   if (!usuario) return <LoginPage />
   if (usuario.debeCambiarPassword) return <CambiarPasswordPage />
 
-  // Si cambia el usuario (otro rol), no mostrar una vista que no le corresponde
-  const permitida = MENU.some(
-    (m) => m.vista === vista && m.roles.includes(usuario.rol)
-  )
-  const vistaActual: Vista = permitida ? vista : "inicio"
+  const vistaActual: Vista = permitida && vista ? vista : "inicio"
 
   return (
     <SidebarProvider>
@@ -139,6 +152,7 @@ export function App() {
               {vistaActual === "colaTriaje" && <ColaPage modo="triaje" />}
               {vistaActual === "misPacientes" && <ColaPage modo="medico" />}
               {vistaActual === "pacientes" && <PacientesPage />}
+              {vistaActual === "importacion" && <ImportacionPage />}
               {vistaActual === "consultorios" && <ConsultoriosPage />}
               {vistaActual === "usuarios" && <UsuariosPage />}
               {vistaActual === "reportes" && <ReportesPage />}

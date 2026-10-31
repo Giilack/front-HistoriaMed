@@ -1,5 +1,6 @@
 import {
   Building2,
+  FileStack,
   CalendarDays,
   ChartColumn,
   ClipboardList,
@@ -19,6 +20,7 @@ export type Vista =
   | "colaTriaje"
   | "misPacientes"
   | "pacientes"
+  | "importacion"
   | "usuarios"
   | "consultorios"
   | "auditoria"
@@ -70,6 +72,13 @@ export const MENU: OpcionMenu[] = [
     icono: ClipboardList,
     grupo: "Atención",
     roles: ["ADMISION", "TRIAJE", "MEDICO"],
+  },
+  {
+    vista: "importacion",
+    etiqueta: "Importar historias",
+    icono: FileStack,
+    grupo: "Atención",
+    roles: ["ADMISION"],
   },
   {
     vista: "usuarios",
