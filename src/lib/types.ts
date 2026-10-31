@@ -618,3 +618,57 @@ export interface Reporte {
   prioridades: Conteo[]
   pacientesPorFinanciamiento: Conteo[]
 }
+
+// Importación masiva de historias (plan.md, sección 5.5.1)
+export type EstadoImportacion =
+  | "EN_COLA"
+  | "PROCESANDO"
+  | "LISTA"
+  | "ERROR"
+  | "APROBADA"
+  | "RECHAZADA"
+
+export interface Importacion {
+  id: number
+  nombreArchivo: string
+  estado: EstadoImportacion
+  error: string | null
+  tamanioBytes: number
+  creadoEn: string
+  pacienteId: number | null
+  motivoRechazo: string | null
+}
+
+export interface DatoImportado {
+  categoria: string
+  descripcion: string | null
+  detalle: string | null
+  fecha: string | null
+  gravedad: string | null
+  valor: string | null
+  unidad: string | null
+  rangoReferencia: string | null
+  fragmentoOrigen: string | null
+}
+
+export interface DetalleImportacion {
+  importacion: Importacion
+  paciente: {
+    tipoDocumento: string | null
+    numeroDocumento: string | null
+    nombres: string | null
+    apellidoPaterno: string | null
+    apellidoMaterno: string | null
+    fechaNacimiento: string | null
+    sexo: string | null
+    telefono: string | null
+    direccion: string | null
+  } | null
+  datos: DatoImportado[]
+  existente: {
+    id: number
+    numeroHc: string
+    nombreCompleto: string
+    coincideNombre: boolean
+  } | null
+}

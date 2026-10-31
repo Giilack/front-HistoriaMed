@@ -71,6 +71,14 @@ describe("Usabilidad y accesibilidad", function () {
       await revisarAxe(driver, "Citas")
     })
 
+    it("U-19 Importación de historias", async () => {
+      await entrarYEsperar(driver, "admision.demo")
+      await menu(driver, "Importar historias")
+      await esperarTexto(driver, "Suba las historias")
+      await driver.sleep(1000)
+      await revisarAxe(driver, "Importar historias")
+    })
+
     it("U-03 Panel de triaje y cola", async () => {
       await entrarYEsperar(driver, "triaje.demo")
       await revisarAxe(driver, "Inicio de triaje")
