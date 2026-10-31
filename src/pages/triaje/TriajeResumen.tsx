@@ -79,15 +79,13 @@ export function TriajeResumen({ triaje: t }: { triaje: Triaje }) {
           .map(([Icono, etiqueta, valor]) => (
             <div
               key={etiqueta}
-              className="flex items-center gap-2 rounded-lg border bg-muted/30 px-2.5 py-2"
+              className="min-w-0 rounded-lg border bg-muted/30 px-2.5 py-2"
             >
-              <Icono className="size-4 shrink-0 text-marca" aria-hidden />
-              <div className="min-w-0">
-                <dt className="truncate text-[11px] text-muted-foreground">
-                  {etiqueta}
-                </dt>
-                <dd className="font-semibold tabular-nums">{valor}</dd>
-              </div>
+              <dt className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <Icono className="size-4 shrink-0 text-marca" aria-hidden />
+                <span className="truncate">{etiqueta}</span>
+              </dt>
+              <dd className="font-semibold tabular-nums">{valor}</dd>
             </div>
           ))}
       </dl>

@@ -178,7 +178,6 @@ function MenuUsuario({
               <SidebarMenuButton
                 size="lg"
                 className="data-popup-open:bg-sidebar-accent"
-                aria-label={`Menú de ${usuario.nombres} ${usuario.apellidos}`}
               />
             }
           >
