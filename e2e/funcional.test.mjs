@@ -84,7 +84,7 @@ describe("Funcionalidad de la interfaz", function () {
     await esperarTexto(driver, "Huamán")
   })
 
-  it("F-07 La ficha muestra las alergias del paciente (HU-alergias)", async () => {
+  it("F-07 La ficha muestra las alergias del paciente (HU006)", async () => {
     await entrarYEsperar(driver, "dr.diaz")
     await menu(driver, "Pacientes")
     await buscarPaciente(driver, "45678912")
