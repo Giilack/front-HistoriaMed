@@ -1,16 +1,12 @@
 import type * as React from "react"
 import {
   Activity,
-  ArrowRight,
   CalendarCheck,
   CalendarClock,
-  ChartColumn,
   CircleAlert,
   Clock,
   HeartPulse,
-  ScrollText,
   Stethoscope,
-  UserPlus,
   UserRoundX,
   UsersRound,
   type LucideIcon,
@@ -19,7 +15,6 @@ import {
 import { useAuth } from "@/auth/AuthContext"
 import { EstadoCitaEtiqueta } from "@/components/EstadoCitaEtiqueta"
 import { PrioridadEtiqueta } from "@/components/PrioridadEtiqueta"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -29,7 +24,6 @@ import {
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { fechaLocal, formatearHora, hoyISO, minutosDesde } from "@/lib/fechas"
-import type { Vista } from "@/lib/navegacion"
 import {
   NIVEL_PRIORIDAD,
   NOMBRE_ROL,
@@ -40,19 +34,17 @@ import {
 } from "@/lib/types"
 import { useApi, useReloj } from "@/lib/useApi"
 
-type Navegar = (v: Vista) => void
-
-/** Panel de inicio según el rol: indicadores del día y accesos rápidos. Se actualiza cada minuto. */
-export function InicioPage({ alNavegar }: { alNavegar: Navegar }) {
+/** Panel de inicio según el rol: solo indicadores del día. A cada módulo se entra por el menú lateral. */
+export function InicioPage() {
   const { usuario } = useAuth()
   if (!usuario) return null
   return (
     <div className="flex flex-col gap-6">
       <Saludo nombre={usuario.nombres} rol={NOMBRE_ROL[usuario.rol]} />
-      {usuario.rol === "ADMISION" && <PanelAdmision alNavegar={alNavegar} />}
-      {usuario.rol === "TRIAJE" && <PanelTriaje alNavegar={alNavegar} />}
-      {usuario.rol === "MEDICO" && <PanelMedico alNavegar={alNavegar} />}
-      {usuario.rol === "ADMIN" && <PanelAdmin alNavegar={alNavegar} />}
+      {usuario.rol === "ADMISION" && <PanelAdmision />}
+      {usuario.rol === "TRIAJE" && <PanelTriaje />}
+      {usuario.rol === "MEDICO" && <PanelMedico />}
+      {usuario.rol === "ADMIN" && <PanelAdmin />}
     </div>
   )
 }
@@ -73,7 +65,7 @@ function Saludo({ nombre, rol }: { nombre: string; rol: string }) {
 
 // ---------------------------------------------------------------------------------------------------------------
 
-function PanelAdmision({ alNavegar }: { alNavegar: Navegar }) {
+function PanelAdmision() {
   const { datos: citas, recargar } = useApi<Cita[]>(
     `/api/citas?fecha=${hoyISO()}`
   )
@@ -114,38 +106,17 @@ function PanelAdmision({ alNavegar }: { alNavegar: Navegar }) {
           valor={cuenta("NO_SE_PRESENTO")}
         />
       </FilaIndicadores>
-      <div className="grid gap-4 lg:grid-cols-3">
-        <ListaCitas
-          className="lg:col-span-2"
-          titulo="Próximas citas"
-          descripcion="Pacientes programados que aún no llegan"
-          citas={citas ? proximas : undefined}
-          vacio="No hay más citas programadas para hoy."
-          alVerTodo={() => alNavegar("citas")}
-        />
-        <AccesosRapidos
-          accesos={[
-            {
-              icono: UserPlus,
-              titulo: "Registrar paciente",
-              detalle: "Filiación y seguro",
-              vista: "pacientes",
-            },
-            {
-              icono: CalendarClock,
-              titulo: "Citas y llegadas",
-              detalle: "Programar o registrar llegada",
-              vista: "citas",
-            },
-          ]}
-          alNavegar={alNavegar}
-        />
-      </div>
+      <ListaCitas
+        titulo="Próximas citas"
+        descripcion="Pacientes programados que aún no llegan"
+        citas={citas ? proximas : undefined}
+        vacio="No hay más citas programadas para hoy."
+      />
     </>
   )
 }
 
-function PanelTriaje({ alNavegar }: { alNavegar: Navegar }) {
+function PanelTriaje() {
   const { datos: citas, recargar } = useApi<Cita[]>(
     `/api/citas?fecha=${hoyISO()}`
   )
@@ -183,39 +154,18 @@ function PanelTriaje({ alNavegar }: { alNavegar: Navegar }) {
           valor={citas?.filter((c) => c.prioridad === "URGENTE").length}
         />
       </FilaIndicadores>
-      <div className="grid gap-4 lg:grid-cols-3">
-        <ListaCitas
-          className="lg:col-span-2"
-          titulo="En espera de triaje"
-          descripcion="Por orden de llegada"
-          citas={citas ? enEspera.slice(0, 6) : undefined}
-          vacio="No hay pacientes esperando triaje."
-          mostrarEspera={ahora}
-          alVerTodo={() => alNavegar("colaTriaje")}
-        />
-        <AccesosRapidos
-          accesos={[
-            {
-              icono: HeartPulse,
-              titulo: "Cola de triaje",
-              detalle: "Registrar signos vitales",
-              vista: "colaTriaje",
-            },
-            {
-              icono: UsersRound,
-              titulo: "Buscar paciente",
-              detalle: "Ficha, alergias y triajes",
-              vista: "pacientes",
-            },
-          ]}
-          alNavegar={alNavegar}
-        />
-      </div>
+      <ListaCitas
+        titulo="En espera de triaje"
+        descripcion="Por orden de llegada"
+        citas={citas ? enEspera.slice(0, 6) : undefined}
+        vacio="No hay pacientes esperando triaje."
+        mostrarEspera={ahora}
+      />
     </>
   )
 }
 
-function PanelMedico({ alNavegar }: { alNavegar: Navegar }) {
+function PanelMedico() {
   const { datos: citas, recargar } = useApi<Cita[]>(
     `/api/citas?fecha=${hoyISO()}`
   )
@@ -266,39 +216,18 @@ function PanelMedico({ alNavegar }: { alNavegar: Navegar }) {
           valor={citas?.filter((c) => c.estado === "ATENDIDO").length}
         />
       </FilaIndicadores>
-      <div className="grid gap-4 lg:grid-cols-3">
-        <ListaCitas
-          className="lg:col-span-2"
-          titulo="Siguientes pacientes"
-          descripcion="Por prioridad y hora de triaje"
-          citas={citas ? porAtender.slice(0, 6) : undefined}
-          vacio="No hay pacientes esperando consulta."
-          mostrarEspera={ahora}
-          alVerTodo={() => alNavegar("misPacientes")}
-        />
-        <AccesosRapidos
-          accesos={[
-            {
-              icono: Stethoscope,
-              titulo: "Mis pacientes",
-              detalle: "Atender y ver triajes",
-              vista: "misPacientes",
-            },
-            {
-              icono: UsersRound,
-              titulo: "Buscar paciente",
-              detalle: "Historia clínica completa",
-              vista: "pacientes",
-            },
-          ]}
-          alNavegar={alNavegar}
-        />
-      </div>
+      <ListaCitas
+        titulo="Siguientes pacientes"
+        descripcion="Por prioridad y hora de triaje"
+        citas={citas ? porAtender.slice(0, 6) : undefined}
+        vacio="No hay pacientes esperando consulta."
+        mostrarEspera={ahora}
+      />
     </>
   )
 }
 
-function PanelAdmin({ alNavegar }: { alNavegar: Navegar }) {
+function PanelAdmin() {
   const hoy = fechaLocal(hoyISO())
   const hace7 = new Date(hoy)
   hace7.setDate(hoy.getDate() - 6)
@@ -350,30 +279,6 @@ function PanelAdmin({ alNavegar }: { alNavegar: Navegar }) {
           detalle="de la llegada a la consulta"
         />
       </FilaIndicadores>
-      <AccesosRapidos
-        horizontal
-        accesos={[
-          {
-            icono: UsersRound,
-            titulo: "Usuarios",
-            detalle: "Altas, roles y contraseñas",
-            vista: "usuarios",
-          },
-          {
-            icono: ChartColumn,
-            titulo: "Reportes",
-            detalle: "Indicadores de gestión",
-            vista: "reportes",
-          },
-          {
-            icono: ScrollText,
-            titulo: "Auditoría",
-            detalle: "Quién accedió y cuándo",
-            vista: "auditoria",
-          },
-        ]}
-        alNavegar={alNavegar}
-      />
     </>
   )
 }
@@ -438,8 +343,6 @@ function ListaCitas({
   citas,
   vacio,
   mostrarEspera,
-  alVerTodo,
-  className,
 }: {
   titulo: string
   descripcion: string
@@ -447,24 +350,12 @@ function ListaCitas({
   vacio: string
   /** Si se indica, muestra minutos de espera desde la llegada o el triaje. */
   mostrarEspera?: number
-  alVerTodo: () => void
-  className?: string
 }) {
   return (
-    <Card className={className}>
-      <CardHeader className="flex flex-row items-start justify-between gap-2">
-        <div className="flex flex-col gap-1">
-          <CardTitle>{titulo}</CardTitle>
-          <CardDescription>{descripcion}</CardDescription>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-marca"
-          onClick={alVerTodo}
-        >
-          Ver todo <ArrowRight />
-        </Button>
+    <Card>
+      <CardHeader>
+        <CardTitle>{titulo}</CardTitle>
+        <CardDescription>{descripcion}</CardDescription>
       </CardHeader>
       <CardContent>
         {!citas ? (
@@ -511,50 +402,5 @@ function ListaCitas({
         )}
       </CardContent>
     </Card>
-  )
-}
-
-interface Acceso {
-  icono: LucideIcon
-  titulo: string
-  detalle: string
-  vista: Vista
-}
-
-function AccesosRapidos({
-  accesos,
-  alNavegar,
-  horizontal = false,
-}: {
-  accesos: Acceso[]
-  alNavegar: Navegar
-  horizontal?: boolean
-}) {
-  return (
-    <div
-      className={
-        horizontal ? "grid gap-4 sm:grid-cols-3" : "flex flex-col gap-4"
-      }
-    >
-      {accesos.map(({ icono: Icono, titulo, detalle, vista }) => (
-        <button
-          key={vista}
-          type="button"
-          onClick={() => alNavegar(vista)}
-          className="group flex items-center gap-4 rounded-xl bg-card p-4 text-left ring-1 ring-foreground/10 transition hover:shadow-sm hover:ring-marca/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-        >
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-marca text-white">
-            <Icono className="size-5" aria-hidden />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block font-medium">{titulo}</span>
-            <span className="block text-sm text-muted-foreground">
-              {detalle}
-            </span>
-          </span>
-          <ArrowRight className="size-4 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-marca" />
-        </button>
-      ))}
-    </div>
   )
 }

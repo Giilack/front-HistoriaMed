@@ -3,13 +3,10 @@ import {
   CircleUserRound,
   KeyRound,
   LogOut,
-  Moon,
-  Sun,
 } from "lucide-react"
 
 import { useAuth } from "@/auth/AuthContext"
 import { Marca } from "@/components/Marca"
-import { useTheme } from "@/components/theme-provider"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +27,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { MENU, type OpcionMenu, type Vista } from "@/lib/navegacion"
 import { NOMBRE_ROL } from "@/lib/types"
@@ -49,8 +47,15 @@ export function AppSidebar({
   alCambiarPassword: () => void
 }) {
   const { usuario } = useAuth()
+  const { isMobile, setOpenMobile } = useSidebar()
   if (!usuario) return null
   const opciones = MENU.filter((m) => m.roles.includes(usuario.rol))
+
+  // En celular el menú es un panel que tapa la pantalla: se cierra al elegir una opción
+  const elegir = (accion: () => void) => {
+    if (isMobile) setOpenMobile(false)
+    accion()
+  }
 
   return (
     <Sidebar collapsible="icon">
@@ -73,7 +78,7 @@ export function AppSidebar({
                     <SidebarMenuButton
                       isActive={vista === o.vista}
                       tooltip={o.etiqueta}
-                      onClick={() => alNavegar(o.vista)}
+                      onClick={() => elegir(() => alNavegar(o.vista))}
                       // Opción activa: celeste claro con una barra azul petróleo a la izquierda
                       className="relative h-9 data-active:before:absolute data-active:before:inset-y-1.5 data-active:before:-left-2 data-active:before:w-1 data-active:before:rounded-r-full data-active:before:bg-marca group-data-[collapsible=icon]:data-active:before:hidden [&_svg]:text-muted-foreground data-active:[&_svg]:text-marca"
                     >
@@ -89,13 +94,68 @@ export function AppSidebar({
       </SidebarContent>
 
       <SidebarFooter className="border-t">
-        <MenuUsuario
-          alNavegar={alNavegar}
-          alCambiarPassword={alCambiarPassword}
-        />
+        {isMobile ? (
+          <OpcionesUsuarioMovil
+            alCambiarPassword={() => elegir(alCambiarPassword)}
+            alSalir={() => elegir(() => alNavegar("inicio"))}
+          />
+        ) : (
+          <MenuUsuario
+            alNavegar={alNavegar}
+            alCambiarPassword={alCambiarPassword}
+          />
+        )}
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
+  )
+}
+
+/**
+ * Celular: las opciones van a la vista dentro del panel. Un menú flotante no sirve aquí: el panel es modal y ocupa casi
+ * todo el ancho, así que el menú se abría fuera de la pantalla y no se podía cerrar sesión.
+ */
+function OpcionesUsuarioMovil({
+  alCambiarPassword,
+  alSalir,
+}: {
+  alCambiarPassword: () => void
+  alSalir: () => void
+}) {
+  const { usuario, logout } = useAuth()
+  if (!usuario) return null
+  return (
+    <SidebarMenu>
+      <SidebarMenuItem className="flex items-center gap-2 px-2 py-1">
+        <CircleUserRound className="size-5 shrink-0 text-marca" aria-hidden />
+        <span className="grid min-w-0 flex-1 leading-tight">
+          <span className="truncate text-sm font-medium text-foreground">
+            {usuario.nombres} {usuario.apellidos}
+          </span>
+          <span className="truncate text-xs text-muted-foreground">
+            {NOMBRE_ROL[usuario.rol]}
+          </span>
+        </span>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton className="h-11" onClick={alCambiarPassword}>
+          <KeyRound />
+          <span>Cambiar contraseña</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          className="h-11 text-destructive hover:text-destructive"
+          onClick={() => {
+            alSalir()
+            void logout()
+          }}
+        >
+          <LogOut />
+          <span>Cerrar sesión</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    </SidebarMenu>
   )
 }
 
@@ -107,12 +167,7 @@ function MenuUsuario({
   alCambiarPassword: () => void
 }) {
   const { usuario, logout } = useAuth()
-  const { theme, setTheme } = useTheme()
   if (!usuario) return null
-  const oscuro =
-    theme === "dark" ||
-    (theme === "system" &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches)
 
   return (
     <SidebarMenu>
@@ -123,6 +178,7 @@ function MenuUsuario({
               <SidebarMenuButton
                 size="lg"
                 className="data-popup-open:bg-sidebar-accent"
+                aria-label={`Menú de ${usuario.nombres} ${usuario.apellidos}`}
               />
             }
           >
@@ -159,12 +215,6 @@ function MenuUsuario({
             <DropdownMenuItem onClick={alCambiarPassword}>
               <KeyRound />
               Cambiar contraseña
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => setTheme(oscuro ? "light" : "dark")}
-            >
-              {oscuro ? <Sun /> : <Moon />}
-              {oscuro ? "Modo claro" : "Modo oscuro"}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
