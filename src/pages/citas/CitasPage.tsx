@@ -408,7 +408,7 @@ export function CitasPage() {
                               {formatearHora(c.hora)}
                             </span>
                           )}
-                          {c.numeroTurno && (
+                          {c.numeroTurno != null && (
                             <span className="block text-xs text-muted-foreground">
                               Turno {c.numeroTurno}
                             </span>

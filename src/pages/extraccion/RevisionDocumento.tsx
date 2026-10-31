@@ -159,7 +159,7 @@ export function RevisionDocumento({
     categoria: CategoriaItem
     item?: ItemExtraccion
   } | null>(null)
-  // El médico acepta todo por defecto y desmarca lo que no corresponde
+  // El médico acepta cada dato por defecto y desmarca lo que no corresponde
   const [descartados, setDescartados] = React.useState<Set<number>>(new Set())
   const [pie, setPie] = React.useState<Pie>("normal")
   const [motivo, setMotivo] = React.useState("")
@@ -704,7 +704,7 @@ function FilaItem({
         </div>
         {item.fragmentoOrigen && (
           <p className="mt-1 border-l-2 border-marca-acento pl-2 font-mono text-xs text-muted-foreground">
-            «{item.fragmentoOrigen}»{item.pagina && ` · pág. ${item.pagina}`}
+            «{item.fragmentoOrigen}»{item.pagina != null && ` · pág. ${item.pagina}`}
           </p>
         )}
         <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">

@@ -112,8 +112,8 @@ export function AppSidebar({
 }
 
 /**
- * Celular: las opciones van a la vista dentro del panel. Un menú flotante no sirve aquí: el panel es modal y ocupa casi
- * todo el ancho, así que el menú se abría fuera de la pantalla y no se podía cerrar sesión.
+ * Celular: las opciones van a la vista dentro del panel. Un menú flotante no sirve aquí: el panel es modal y ocupa
+ * casi la pantalla entera, así que el menú se abría fuera de la vista y no se podía cerrar sesión.
  */
 function OpcionesUsuarioMovil({
   alCambiarPassword,
