@@ -7,7 +7,7 @@
       "destination": "https://historiamed-backend.onrender.com/api/:ruta*"
     },
     {
-      "source": "/((?!api/|assets/).*)",
+      "source": "/((?!api/|assets/|.*[.]).*)",
       "destination": "/index.html"
     }
   ],
