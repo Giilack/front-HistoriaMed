@@ -25,11 +25,9 @@ import {
 } from "@/lib/types"
 import { useApi, useDebounce } from "@/lib/useApi"
 
+import { irA, partesDeRuta, RUTA_VISTA, useRuta } from "@/lib/rutas"
 import { EstadoSeguroEtiqueta, FichaPaciente } from "./FichaPaciente"
 import { FormularioPaciente } from "./FormularioPaciente"
-
-type Vista =
-  { tipo: "busqueda" } | { tipo: "nuevo" } | { tipo: "ficha"; id: number }
 
 /**
  * Búsqueda de pacientes, registro (ADMISION) y ficha. Reglas en plan.md, secciones 5.1 y 5.2.
@@ -37,30 +35,35 @@ type Vista =
 export function PacientesPage() {
   const { usuario } = useAuth()
   const puedeRegistrar = usuario?.rol === "ADMISION"
-  const [vista, setVista] = React.useState<Vista>({ tipo: "busqueda" })
+  const [primera, pestana] = partesDeRuta(useRuta(), "pacientes")
+  const fichaId = Number(primera)
   // La búsqueda vive aquí para conservarla al volver desde una ficha
   const [texto, setTexto] = React.useState("")
   const [numPagina, setNumPagina] = React.useState(0)
 
-  if (vista.tipo === "nuevo") {
+  if (primera === "nuevo") {
     return (
       <FormularioPaciente
         alGuardar={(p) => {
           toast.success("Paciente registrado", {
             description: `Historia clínica ${p.numeroHc}`,
           })
-          setVista({ tipo: "ficha", id: p.id })
+          irA(`${RUTA_VISTA.pacientes}/${p.id}`, true)
         }}
-        alCancelar={() => setVista({ tipo: "busqueda" })}
+        alCancelar={() => irA(RUTA_VISTA.pacientes)}
       />
     )
   }
-  if (vista.tipo === "ficha") {
+  if (fichaId) {
     return (
       <FichaPaciente
-        key={vista.id}
-        id={vista.id}
-        alVolver={() => setVista({ tipo: "busqueda" })}
+        key={fichaId}
+        id={fichaId}
+        pestana={pestana}
+        alCambiarPestana={(p) =>
+          irA(`${RUTA_VISTA.pacientes}/${fichaId}/${p}`, true)
+        }
+        alVolver={() => irA(RUTA_VISTA.pacientes)}
       />
     )
   }
@@ -74,8 +77,8 @@ export function PacientesPage() {
       numPagina={numPagina}
       setNumPagina={setNumPagina}
       puedeRegistrar={puedeRegistrar}
-      alNuevo={() => setVista({ tipo: "nuevo" })}
-      alAbrir={(id) => setVista({ tipo: "ficha", id })}
+      alNuevo={() => irA(`${RUTA_VISTA.pacientes}/nuevo`)}
+      alAbrir={(id) => irA(`${RUTA_VISTA.pacientes}/${id}`)}
     />
   )
 }

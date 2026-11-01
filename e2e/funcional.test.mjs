@@ -4,6 +4,7 @@ import assert from "node:assert/strict"
 import { By, until } from "selenium-webdriver"
 
 import {
+  BASE,
   SOLO_LECTURA,
   ESPERA,
   abrirNavegador,
@@ -84,7 +85,7 @@ describe("Funcionalidad de la interfaz", function () {
     await esperarTexto(driver, "Huamán")
   })
 
-  it("F-07 La ficha muestra las alergias del paciente (HU-alergias)", async () => {
+  it("F-07 La ficha muestra las alergias del paciente (HU006)", async () => {
     await entrarYEsperar(driver, "dr.diaz")
     await menu(driver, "Pacientes")
     await buscarPaciente(driver, "45678912")
@@ -141,6 +142,29 @@ describe("Funcionalidad de la interfaz", function () {
     await esperarTexto(driver, "Fuentes:", 60000)
     await esperarTexto(driver, "Penicilina")
     await capturar(driver, "F-12-asistente")
+  })
+
+  it("F-14 Cada página tiene su dirección y el botón atrás funciona", async () => {
+    await entrarYEsperar(driver, "dr.diaz")
+    const ruta = async () => new URL(await driver.getCurrentUrl()).pathname
+    await menu(driver, "Pacientes")
+    await driver.wait(async () => (await ruta()) === "/pacientes", ESPERA)
+    await buscarPaciente(driver, "45678912")
+    await clic(driver, porTexto("Quispe Mamani", "tr"))
+    await driver.wait(async () => /^\/pacientes\/\d+$/.test(await ruta()), ESPERA)
+    assert.doesNotMatch(await ruta(), /45678912/, "La dirección no debe llevar el DNI")
+    await clic(driver, boton("Resumen clínico"))
+    await driver.wait(async () => (await ruta()).endsWith("/clinico"), ESPERA)
+    await driver.navigate().refresh()
+    await esperarTexto(driver, "Penicilina")
+    await driver.navigate().back()
+    await driver.wait(async () => (await ruta()) === "/pacientes", ESPERA)
+  })
+
+  it("F-15 Una dirección de otro rol lleva al Inicio", async () => {
+    await entrarYEsperar(driver, "dr.diaz")
+    await driver.get(`${BASE}/usuarios`)
+    await driver.wait(async () => new URL(await driver.getCurrentUrl()).pathname === "/inicio", ESPERA)
   })
 
   it("F-13 Registro de un paciente nuevo desde admisión (RF-02, CP-07)", async function () {

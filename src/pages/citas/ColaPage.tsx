@@ -46,6 +46,7 @@ import {
 } from "@/lib/types"
 import { useApi, useReloj } from "@/lib/useApi"
 import { cn } from "@/lib/utils"
+import { irA, partesDeRuta, RUTA_VISTA, useRuta } from "@/lib/rutas"
 import { AtencionPage } from "@/pages/atencion/AtencionPage"
 import { FormularioTriaje } from "@/pages/triaje/FormularioTriaje"
 import { TriajeResumen } from "@/pages/triaje/TriajeResumen"
@@ -74,6 +75,9 @@ export function ColaPage({ modo }: { modo: "triaje" | "medico" }) {
   const [error, setError] = React.useState<string | null>(null)
   const [triando, setTriando] = React.useState<Cita | null>(null)
   const [atencion, setAtencion] = React.useState<Atencion | null>(null)
+  const moduloCola = modo === "triaje" ? "colaTriaje" : "misPacientes"
+  const [seccion, citaRuta] = partesDeRuta(useRuta(), moduloCola)
+  const citaId = seccion === "atencion" ? Number(citaRuta) : 0
   const [viendoTriaje, setViendoTriaje] = React.useState<Cita | null>(null)
   const { datos: consultorios } = useApi<Consultorio[]>("/api/consultorios")
   const { confirmar } = useConfirmacion()
@@ -87,6 +91,19 @@ export function ColaPage({ modo }: { modo: "triaje" | "medico" }) {
     recargar,
   } = useApi<Cita[]>(`/api/citas?${params}`)
   const ahora = useReloj(30_000, recargar)
+
+  // Abrir la dirección directamente o volver con el navegador carga la atención de esa cita
+  React.useEffect(() => {
+    if (!citaId || atencion?.citaId === citaId) return
+    api<Atencion>(`/api/citas/${citaId}/atencion`)
+      .then(setAtencion)
+      .catch((e: unknown) => {
+        setError(
+          e instanceof Error ? e.message : "No se pudo abrir la atención"
+        )
+        irA(RUTA_VISTA[moduloCola], true)
+      })
+  }, [citaId, atencion, moduloCola])
 
   async function noRespondio(c: Cita) {
     if (
@@ -121,18 +138,20 @@ export function ColaPage({ modo }: { modo: "triaje" | "medico" }) {
           method: terminada ? "GET" : "POST",
         })
       )
+      irA(`${RUTA_VISTA[moduloCola]}/atencion/${c.id}`)
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo abrir la atención")
     }
   }
 
-  if (atencion) {
+  if (citaId && atencion?.citaId === citaId) {
     return (
       <AtencionPage
         key={atencion.id}
         atencion={atencion}
         alVolver={() => {
           setAtencion(null)
+          irA(RUTA_VISTA[moduloCola])
           recargar()
         }}
       />
