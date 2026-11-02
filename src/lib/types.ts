@@ -627,6 +627,8 @@ export type EstadoImportacion =
   | "ERROR"
   | "APROBADA"
   | "RECHAZADA"
+  | "ELIMINADA"
+  | "ANULADA"
 
 export interface Importacion {
   id: number
@@ -637,18 +639,32 @@ export interface Importacion {
   creadoEn: string
   pacienteId: number | null
   motivoRechazo: string | null
+  subidoPor: string
 }
 
+/** Un dato tal como lo acepta el backend: propuesto por la IA o escrito por Admisión. */
 export interface DatoImportado {
-  categoria: string
+  categoria: CategoriaItem
   descripcion: string | null
   detalle: string | null
   fecha: string | null
-  gravedad: string | null
+  tipoAlergia: TipoAlergia | null
+  gravedad: GravedadAlergia | null
+  cieCodigo: string | null
+  medicamentoId: number | null
   valor: string | null
   unidad: string | null
   rangoReferencia: string | null
+  tipoAntecedente: TipoAntecedente | null
   fragmentoOrigen: string | null
+  pagina: number | null
+}
+
+export interface PacienteParecido {
+  id: number
+  numeroHc: string
+  nombreCompleto: string
+  coincideNombre: boolean
 }
 
 export interface DetalleImportacion {
@@ -665,10 +681,8 @@ export interface DetalleImportacion {
     direccion: string | null
   } | null
   datos: DatoImportado[]
-  existente: {
-    id: number
-    numeroHc: string
-    nombreCompleto: string
-    coincideNombre: boolean
-  } | null
+  existente: PacienteParecido | null
+  parecidos: PacienteParecido[]
+  variosPacientes: boolean
+  datosOmitidos: number
 }
