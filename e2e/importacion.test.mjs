@@ -93,7 +93,9 @@ describe("Importación de historias", function () {
 
   it("I-03 Elimina un documento desde la lista", async () => {
     await driver.findElement(By.css('input[type="file"]')).sendKeys(PDF)
-    await clic(driver, By.css(`[aria-label="Eliminar ${NOMBRE}"]`), LA_IA_TERMINA)
+    // Mientras la IA lee el archivo no se puede eliminar: se espera a que termine
+    await driver.wait(until.elementLocated(By.xpath(`//li[.//span[normalize-space(.)=${JSON.stringify(NOMBRE)}]]//button[normalize-space(.)="Revisar"]`)), LA_IA_TERMINA)
+    await clic(driver, By.css(`[aria-label="Eliminar ${NOMBRE}"]`))
     await clic(driver, boton("Sí, eliminar"))
     await esperarTexto(driver, "Documento eliminado")
     await driver.wait(until.elementLocated(By.css('input[type="file"]')), ESPERA)
