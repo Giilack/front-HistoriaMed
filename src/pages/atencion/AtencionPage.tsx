@@ -45,6 +45,7 @@ import {
 import { useApi } from "@/lib/useApi"
 import { cn } from "@/lib/utils"
 import { AsistenteClinico } from "@/pages/asistente/AsistenteClinico"
+import { AvisoImportado } from "@/pages/importacion/AvisoImportado"
 import { PanelDocumentos } from "@/pages/documentos/PanelDocumentos"
 import { PanelAntecedentes } from "@/pages/extraccion/PanelAntecedentes"
 import { PanelLaboratorio } from "@/pages/extraccion/PanelLaboratorio"
@@ -323,6 +324,7 @@ export function AtencionPage({
         </div>
 
         <div className="flex flex-col gap-4">
+          <AvisoImportado pacienteId={p.id} />
           <TriajeDeLaCita citaId={atencion.citaId} />
           <SeccionTarjeta icono={ShieldAlert} titulo="Alergias">
             <PanelAlergias pacienteId={p.id} />

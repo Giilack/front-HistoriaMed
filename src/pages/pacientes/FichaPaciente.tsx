@@ -60,6 +60,7 @@ import { AsistenteClinico } from "@/pages/asistente/AsistenteClinico"
 import { PanelDocumentos } from "@/pages/documentos/PanelDocumentos"
 import { PanelAntecedentes } from "@/pages/extraccion/PanelAntecedentes"
 import { PanelLaboratorio } from "@/pages/extraccion/PanelLaboratorio"
+import { AvisoImportado } from "@/pages/importacion/AvisoImportado"
 import { PanelAlergias } from "@/pages/triaje/PanelAlergias"
 import { TriajeResumen } from "@/pages/triaje/TriajeResumen"
 
@@ -382,7 +383,8 @@ export function FichaPaciente({
           </TabsContent>
 
           {veDatosClinicos && (
-            <TabsContent value="clinico" className="pt-4">
+            <TabsContent value="clinico" className="flex flex-col gap-4 pt-4">
+              <AvisoImportado pacienteId={paciente.id} />
               <div className="grid gap-4 lg:grid-cols-2">
                 <Card>
                   <CardHeader>
