@@ -12,6 +12,7 @@ import {
   NOMBRE_TIPO_ANTECEDENTE,
   type CategoriaItem,
   type Cie10,
+  type DatoImportado,
   type Extraccion,
   type GravedadAlergia,
   type ItemExtraccion,
@@ -81,13 +82,16 @@ export function FormularioItem({
   categoria,
   item,
   alGuardar,
+  alConfirmar,
   alCancelar,
 }: {
-  extraccionId: number
+  /** Revisión donde se guarda. Sin ella, el dato se entrega con alConfirmar y lo guarda quien usa el formulario. */
+  extraccionId?: number
   categoria: CategoriaItem
   /** Si se indica, se edita ese dato; si no, se agrega uno nuevo. */
   item?: ItemExtraccion
-  alGuardar: (e: Extraccion) => void
+  alGuardar?: (e: Extraccion) => void
+  alConfirmar?: (dato: DatoImportado) => void
   alCancelar: () => void
 }) {
   const [d, setD] = React.useState<Datos>(() => iniciales(item))
@@ -120,8 +124,13 @@ export function FormularioItem({
       fragmentoOrigen: vacio(d.fragmentoOrigen),
       pagina: d.pagina ? Number(d.pagina) : null,
     }
+    if (alConfirmar) {
+      setEnviando(false)
+      alConfirmar(cuerpo)
+      return
+    }
     try {
-      alGuardar(
+      alGuardar?.(
         await api<Extraccion>(
           `/api/extracciones/${extraccionId}/items${item ? `/${item.id}` : ""}`,
           { method: item ? "PUT" : "POST", ...json(cuerpo) }
