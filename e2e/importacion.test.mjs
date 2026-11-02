@@ -74,12 +74,18 @@ describe("Importación de historias", function () {
     await valor.sendKeys(Key.chord(Key.CONTROL, "a"), "999")
     await clic(driver, boton("Guardar"))
     await esperarTexto(driver, "999")
+    // La IA no siempre indica todo: lo que falte lo completa Admisión, como en el uso real
+    for (const pendiente of await driver.findElements(By.xpath('//*[contains(., "Falta el tipo o la gravedad")]/ancestor::div[.//button[starts-with(@aria-label, "Editar")]][1]//button[starts-with(@aria-label, "Editar")]'))) {
+      await pendiente.click()
+      await clic(driver, boton("Guardar"))
+    }
+    await driver.wait(async () => (await aprobar()).isEnabled(), ESPERA)
     await (await aprobar()).click()
     await esperarTexto(driver, "corregido")
     await driver.wait(async () => new URL(await driver.getCurrentUrl()).pathname === "/importacion", ESPERA)
 
-    await driver.findElement(By.xpath('//label[span[normalize-space(.)="Mostrar"]]//select')).sendKeys("Aprobadas")
-    await clic(driver, boton("Anular"))
+    // Solo la fila de este archivo: en la lista puede haber otras importaciones que no son de la prueba
+    await clic(driver, By.xpath(`//li[.//span[normalize-space(.)=${JSON.stringify(NOMBRE)}]][.//*[normalize-space(.)="Aprobada"]]//button[contains(., "Anular")]`))
     await (await campo("Motivo de la anulación")).sendKeys("Prueba automática")
     await clic(driver, boton("Confirmar anulación"))
     await esperarTexto(driver, "Importación anulada")
