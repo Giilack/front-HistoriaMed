@@ -48,7 +48,7 @@ const ALERTAS = new Set([
 const SESION = new Set(["LOGIN_EXITOSO", "LOGOUT", "CAMBIO_PASSWORD"])
 
 function estiloAccion(accion: string) {
-  if (ALERTAS.has(accion)) return "bg-destructive/12 text-destructive"
+  if (ALERTAS.has(accion)) return "bg-destructive/12 text-destructive dark:text-red-300"
   if (SESION.has(accion))
     return "bg-marca-claro text-marca-oscuro dark:bg-muted dark:text-foreground"
   if (accion === "VER") return "bg-muted text-muted-foreground"
