@@ -3,6 +3,10 @@
   "framework": "vite",
   "rewrites": [
     {
+      "source": "/api/salud",
+      "destination": "https://historiamed-backend.onrender.com/actuator/health/liveness"
+    },
+    {
       "source": "/api/:ruta*",
       "destination": "https://historiamed-backend.onrender.com/api/:ruta*"
     },

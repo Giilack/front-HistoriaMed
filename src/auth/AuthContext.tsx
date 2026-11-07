@@ -3,12 +3,18 @@ import * as React from "react"
 
 import {
   api,
+  ApiError,
+  haySesionPrevia,
   json,
+  marcarSesion,
   onSesionExpirada,
   refrescarSesion,
   setAccessToken,
 } from "@/lib/api"
 import type { LoginResponse, Usuario } from "@/lib/types"
+
+/** Tiempo máximo con la pantalla de carga mientras se recupera la sesión (luego se muestra el login). */
+const ESPERA_MAXIMA_MS = 8000
 
 interface AuthState {
   usuario: Usuario | null
@@ -27,20 +33,36 @@ const AuthContext = React.createContext<AuthState | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [usuario, setUsuario] = React.useState<Usuario | null>(null)
-  const [cargando, setCargando] = React.useState(true)
+  // Sin sesión previa en este navegador no hay nada que recuperar: el login se muestra de inmediato
+  const [cargando, setCargando] = React.useState(haySesionPrevia)
 
   const aplicarSesion = React.useCallback((r: LoginResponse) => {
     setAccessToken(r.accessToken)
     setUsuario(r.usuario)
+    marcarSesion(true)
   }, [])
 
-  // Al cargar la página, la cookie de refresh permite recuperar la sesión
+  // Al cargar la página, la cookie de refresh permite recuperar la sesión. Solo se intenta si en este
+  // navegador hubo una sesión; y si el backend está arrancando en frío, a los ESPERA_MAXIMA_MS se muestra
+  // el login en lugar de dejar la pantalla de carga: si la sesión se recupera después, se entra sola.
   React.useEffect(() => {
-    onSesionExpirada(() => setUsuario(null))
+    onSesionExpirada(() => {
+      marcarSesion(false)
+      setUsuario(null)
+    })
+    if (!haySesionPrevia()) return
+    const reloj = setTimeout(() => setCargando(false), ESPERA_MAXIMA_MS)
     refrescarSesion()
       .then(aplicarSesion)
-      .catch(() => setUsuario(null))
-      .finally(() => setCargando(false))
+      .catch((e) => {
+        if (e instanceof ApiError && e.status === 401) marcarSesion(false)
+        setUsuario(null)
+      })
+      .finally(() => {
+        clearTimeout(reloj)
+        setCargando(false)
+      })
+    return () => clearTimeout(reloj)
   }, [aplicarSesion])
 
   const login = React.useCallback(
@@ -64,6 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await api("/api/auth/logout", { method: "POST" })
     } finally {
       setAccessToken(null)
+      marcarSesion(false)
       setUsuario(null)
     }
   }, [])

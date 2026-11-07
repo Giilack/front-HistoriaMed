@@ -1,8 +1,9 @@
-// Utilidades de las pruebas de interfaz con Selenium WebDriver (Microsoft Edge sin ventana).
+// Utilidades de las pruebas de interfaz con Selenium WebDriver (Edge o Chrome sin ventana).
 import fs from "node:fs"
 import path from "node:path"
 
 import { Browser, Builder, By, until } from "selenium-webdriver"
+import chrome from "selenium-webdriver/chrome.js"
 import edge from "selenium-webdriver/edge.js"
 
 export const BASE = (process.env.E2E_URL ?? "http://localhost:5173").replace(/\/$/, "")
@@ -18,11 +19,24 @@ fs.mkdirSync(CAPTURAS, { recursive: true })
 export const CELULAR = { width: 390, height: 844 }
 export const ESCRITORIO = { width: 1366, height: 900 }
 
+// E2E_NAVEGADOR=chrome ejecuta las mismas pruebas en Google Chrome (interoperabilidad entre navegadores).
+// E2E_DRIVER indica la ruta de chromedriver/msedgedriver si no se usa el que descarga Selenium Manager.
+export const NAVEGADOR = process.env.E2E_NAVEGADOR === "chrome" ? "chrome" : "edge"
+
 export async function abrirNavegador({ width, height } = ESCRITORIO) {
-  const opciones = new edge.Options()
+  const modulo = NAVEGADOR === "chrome" ? chrome : edge
+  const opciones = new modulo.Options()
   opciones.addArguments("--headless=new", "--disable-gpu", "--no-sandbox", `--window-size=${width},${height}`)
   if (width < 768) opciones.setMobileEmulation({ deviceMetrics: { width, height, pixelRatio: 2, touch: true } })
-  return new Builder().forBrowser(Browser.EDGE).setEdgeOptions(opciones).build()
+  const constructor = new Builder()
+  if (NAVEGADOR === "chrome") {
+    constructor.forBrowser(Browser.CHROME).setChromeOptions(opciones)
+    if (process.env.E2E_DRIVER) constructor.setChromeService(new chrome.ServiceBuilder(process.env.E2E_DRIVER))
+  } else {
+    constructor.forBrowser(Browser.EDGE).setEdgeOptions(opciones)
+    if (process.env.E2E_DRIVER) constructor.setEdgeService(new edge.ServiceBuilder(process.env.E2E_DRIVER))
+  }
+  return constructor.build()
 }
 
 export const porTexto = (texto, etiqueta = "*") =>
