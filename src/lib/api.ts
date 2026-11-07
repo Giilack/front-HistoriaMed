@@ -33,6 +33,48 @@ export function onSesionExpirada(callback: () => void) {
   alExpirarSesion = callback
 }
 
+// Marca de sesión: solo indica que en este navegador se inició sesión (no guarda el token ni datos).
+// Sin ella no se llama a /api/auth/refresh al abrir la página: quien entra por primera vez ve el login
+// al instante, sin esperar a que el backend despierte y sin el 401 que se registraba en la consola.
+const MARCA_SESION = "historiamed.sesion"
+
+export function haySesionPrevia(): boolean {
+  try {
+    return localStorage.getItem(MARCA_SESION) === "1"
+  } catch {
+    return false
+  }
+}
+
+export function marcarSesion(activa: boolean) {
+  try {
+    if (activa) localStorage.setItem(MARCA_SESION, "1")
+    else localStorage.removeItem(MARCA_SESION)
+  } catch {
+    // Almacenamiento bloqueado (modo privado): se sigue sin la marca
+  }
+}
+
+/**
+ * Consulta /api/salud (Vercel la reenvía a /actuator/health/liveness del backend, pública y sin datos).
+ * Sirve para despertar al backend mientras el usuario escribe y para avisar si está arrancando.
+ */
+export async function servidorDisponible(ms = 60000): Promise<boolean> {
+  const control = new AbortController()
+  const reloj = setTimeout(() => control.abort(), ms)
+  try {
+    const res = await fetch("/api/salud", {
+      signal: control.signal,
+      cache: "no-store",
+    })
+    return res.ok
+  } catch {
+    return false
+  } finally {
+    clearTimeout(reloj)
+  }
+}
+
 // Si varias peticiones reciben 401 a la vez, se renueva el token una sola vez.
 let refrescoEnCurso: Promise<LoginResponse> | null = null
 
