@@ -19,6 +19,11 @@ export default defineConfig({
     // Las llamadas a /api se reenvían al backend: el navegador ve un solo origen,
     // así la cookie de sesión (SameSite=Strict) funciona sin configurar CORS.
     proxy: {
+      // Igual que en Vercel: /api/salud es la salud pública del backend (liveness)
+      "/api/salud": {
+        target: "http://localhost:8080",
+        rewrite: () => "/actuator/health/liveness",
+      },
       "/api": "http://localhost:8080",
     },
   },

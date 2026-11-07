@@ -4,9 +4,12 @@ import { Eye, EyeOff, LockKeyhole, LogIn, UserRound } from "lucide-react"
 import { useAuth } from "@/auth/AuthContext"
 import { AuthLayout } from "@/components/AuthLayout"
 import { CaptchaTurnstile } from "@/components/CaptchaTurnstile"
-import { ApiError } from "@/lib/api"
+import { ApiError, servidorDisponible } from "@/lib/api"
 import { Alerta, Input } from "@/components/form"
 import { Button } from "@/components/ui/button"
+
+/** Si el servidor no responde en este tiempo, se muestra el aviso de que está iniciando. */
+const AVISO_MS = 2500
 
 export function LoginPage() {
   const { login } = useAuth()
@@ -20,6 +23,25 @@ export function LoginPage() {
   const [pideCaptcha, setPideCaptcha] = React.useState(false)
   const [captchaToken, setCaptchaToken] = React.useState<string | null>(null)
   const [versionCaptcha, setVersionCaptcha] = React.useState(0)
+  // El backend gratuito se duerme tras 15 min sin uso. Al abrir el login se le despierta mientras el usuario
+  // escribe; si no responde en AVISO_MS se avisa que está iniciando (visibilidad del estado del sistema).
+  const [servidor, setServidor] = React.useState<
+    "comprobando" | "iniciando" | "listo"
+  >("comprobando")
+
+  React.useEffect(() => {
+    let vigente = true
+    const aviso = setTimeout(() => {
+      if (vigente) setServidor((s) => (s === "comprobando" ? "iniciando" : s))
+    }, AVISO_MS)
+    servidorDisponible().then((ok) => {
+      if (vigente && ok) setServidor("listo")
+    })
+    return () => {
+      vigente = false
+      clearTimeout(aviso)
+    }
+  }, [])
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault()
@@ -56,6 +78,20 @@ export function LoginPage() {
       </div>
 
       <form onSubmit={enviar} className="flex flex-col gap-5">
+        <p
+          role="status"
+          className={
+            servidor === "iniciando"
+              ? "rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100"
+              : "sr-only"
+          }
+        >
+          {servidor === "iniciando"
+            ? "El servidor se está iniciando. Puede escribir sus datos; el primer ingreso puede demorar hasta un minuto."
+            : servidor === "listo"
+              ? "Servidor disponible."
+              : ""}
+        </p>
         {error && <Alerta>{error}</Alerta>}
 
         <label className="flex flex-col gap-1.5 text-sm">
@@ -136,7 +172,11 @@ export function LoginPage() {
           disabled={enviando || (pideCaptcha && !captchaToken)}
         >
           <LogIn aria-hidden />
-          {enviando ? "Ingresando…" : "Ingresar"}
+          {enviando
+            ? servidor === "listo"
+              ? "Ingresando…"
+              : "Conectando con el servidor…"
+            : "Ingresar"}
         </Button>
       </form>
     </AuthLayout>

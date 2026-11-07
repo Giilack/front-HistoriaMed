@@ -94,6 +94,9 @@ export function App() {
           <Skeleton className="h-8 w-40" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-3/4" />
+          <p role="status" className="text-sm text-muted-foreground">
+            Recuperando su sesión…
+          </p>
         </div>
       </div>
     )

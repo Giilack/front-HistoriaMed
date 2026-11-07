@@ -225,6 +225,19 @@ describe("Usabilidad y accesibilidad", function () {
       assert.equal(invalido, false)
     })
 
+    it("U-20 Visibilidad del estado: el login aparece sin esperar al servidor y sin errores en consola", async () => {
+      // Navegador nuevo, sin sesión previa: no debe llamarse a /api/auth/refresh ni quedar la pantalla de carga
+      const inicio = Date.now()
+      await driver.get(BASE)
+      await driver.wait(until.elementLocated(By.css('input[autocomplete="username"]')), 5000)
+      assert.ok(Date.now() - inicio < 5000, "El formulario tardó más de 5 s")
+      const refrescos = await driver.executeScript(
+        "return performance.getEntriesByType('resource').filter(e => e.name.includes('/api/auth/refresh')).length")
+      assert.equal(refrescos, 0)
+      // Mientras el backend arranca se anuncia su estado a lectores de pantalla (role=status)
+      assert.ok(await driver.findElement(By.css('[role="status"]')))
+    })
+
     it("U-17 Prevención de errores: el aviso de contraseña incorrecta se anuncia", async () => {
       await entrar(driver, "usuario.inexistente", "Incorrecta123")
       const alerta = await driver.wait(until.elementLocated(By.css('[role="alert"]')), 90000)
