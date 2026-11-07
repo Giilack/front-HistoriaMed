@@ -10,6 +10,9 @@ import { Button } from "@/components/ui/button"
 
 /** Si el servidor no responde en este tiempo, se muestra el aviso de que está iniciando. */
 const AVISO_MS = 2500
+/** Espera máxima de cada consulta a /api/salud y pausa entre consultas mientras el servidor arranca. */
+const INTENTO_MS = 20000
+const PAUSA_MS = 3000
 
 export function LoginPage() {
   const { login } = useAuth()
@@ -34,9 +37,17 @@ export function LoginPage() {
     const aviso = setTimeout(() => {
       if (vigente) setServidor((s) => (s === "comprobando" ? "iniciando" : s))
     }, AVISO_MS)
-    servidorDisponible().then((ok) => {
-      if (vigente && ok) setServidor("listo")
-    })
+    // Un arranque en frío puede pasar de 2 min y Vercel corta cada espera a los 120 s (502): se reintenta
+    // con esperas cortas hasta que el servidor responda, para que el aviso desaparezca en cuanto esté listo.
+    ;(async () => {
+      while (vigente) {
+        if (await servidorDisponible(INTENTO_MS)) {
+          if (vigente) setServidor("listo")
+          return
+        }
+        await new Promise((r) => setTimeout(r, PAUSA_MS))
+      }
+    })()
     return () => {
       vigente = false
       clearTimeout(aviso)
@@ -87,7 +98,7 @@ export function LoginPage() {
           }
         >
           {servidor === "iniciando"
-            ? "El servidor se está iniciando. Puede escribir sus datos; el primer ingreso puede demorar hasta un minuto."
+            ? "El servidor se está iniciando. Puede escribir sus datos; el primer ingreso puede demorar unos minutos; este aviso desaparecerá cuando esté listo."
             : servidor === "listo"
               ? "Servidor disponible."
               : ""}
